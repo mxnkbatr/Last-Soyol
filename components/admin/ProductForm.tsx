@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Save, ArrowLeft, Image as ImageIcon, Box, FileText, CheckCircle2, Star } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Image as ImageIcon, Box, FileText, CheckCircle2, Star, List, Plus, Trash2 } from 'lucide-react';
 import MultiImageUpload from '@/components/admin/MultiImageUpload';
 import useSWR from 'swr';
 import toast from 'react-hot-toast';
@@ -45,8 +45,15 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting }: Pro
         model: initialData?.model || '',
         delivery: initialData?.delivery || 'Үнэгүй',
         paymentMethods: initialData?.paymentMethods || 'QPay, SocialPay, Card',
-        featured: initialData?.featured || false
+        featured: initialData?.featured || false,
+        attributes: initialData?.attributes || {}
     });
+
+    const [attributeRows, setAttributeRows] = useState<{ key: string, value: string }[]>(
+        initialData?.attributes
+            ? Object.entries(initialData.attributes).map(([k, v]) => ({ key: k, value: String(v) }))
+            : []
+    );
 
     useEffect(() => {
         if (!formData.category && categories.length > 0) {
@@ -91,8 +98,17 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting }: Pro
             return;
         }
 
+        // Convert attribute rows back to object
+        const attributesObj: Record<string, string> = {};
+        attributeRows.forEach(row => {
+            if (row.key.trim()) {
+                attributesObj[row.key.trim()] = row.value;
+            }
+        });
+
         const submitData = {
             ...formData,
+            attributes: attributesObj,
             image: formData.images.length > 0 ? formData.images[0] : '',
         };
 
@@ -102,6 +118,7 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting }: Pro
     const tabs = [
         { id: 'basic', label: 'Ерөнхий', icon: FileText },
         { id: 'media', label: 'Зураг', icon: ImageIcon },
+        { id: 'attributes', label: 'Шинж чанар', icon: List },
         { id: 'pricing', label: 'Үнэ & Үлдэгдэл', icon: Box },
     ];
 
@@ -214,6 +231,68 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting }: Pro
                                     <span>Санал болгож буй хэмжээ: 800x800px. Зөвшөөрөгдсөн: JPG, PNG, WEBP.</span>
                                     <span>(Эхний зураг үндсэн зураг болох бөгөөд одоор тэмдэглэгдэнэ)</span>
                                 </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Attributes Tab */}
+                    {activeTab === 'attributes' && (
+                        <div className="space-y-6 animate-in fade-in duration-300">
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest">Бүтээгдэхүүний Шинж Чанар</label>
+                            </div>
+
+                            <div className="space-y-3">
+                                {attributeRows.map((row, index) => (
+                                    <div key={index} className="flex gap-3 items-center group animate-in slide-in-from-left-2 duration-200">
+                                        <div className="flex-1 flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={row.key}
+                                                onChange={(e) => {
+                                                    const newRows = [...attributeRows];
+                                                    newRows[index].key = e.target.value;
+                                                    setAttributeRows(newRows);
+                                                }}
+                                                placeholder="Шинж (жнэ: Өнгө)"
+                                                className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500/50 transition-all text-sm font-medium"
+                                            />
+                                            <input
+                                                type="text"
+                                                value={row.value}
+                                                onChange={(e) => {
+                                                    const newRows = [...attributeRows];
+                                                    newRows[index].value = e.target.value;
+                                                    setAttributeRows(newRows);
+                                                }}
+                                                placeholder="Утга (жнэ: Улаан)"
+                                                className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500/50 transition-all text-sm"
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setAttributeRows(rows => rows.filter((_, i) => i !== index))}
+                                            className="p-3 rounded-xl bg-slate-800 text-slate-400 hover:bg-red-500/10 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))}
+
+                                {attributeRows.length === 0 && (
+                                    <div className="py-8 text-center bg-slate-950/50 rounded-2xl border border-slate-800 border-dashed">
+                                        <p className="text-sm text-slate-500">Шинж чанар нэмэгдээгүй байна</p>
+                                    </div>
+                                )}
+
+                                <button
+                                    type="button"
+                                    onClick={() => setAttributeRows([...attributeRows, { key: '', value: '' }])}
+                                    className="w-full flex items-center justify-center gap-2 py-4 rounded-xl bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-750 transition-all text-sm font-bold border border-slate-700/50"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Шинж нэмэх
+                                </button>
                             </div>
                         </div>
                     )}

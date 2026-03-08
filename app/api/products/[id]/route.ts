@@ -73,7 +73,14 @@ export async function PATCH(
     }
 
     // Only allow specific fields to be updated
-    const allowedFields = ['featured', 'stockStatus', 'inventory', 'name', 'price', 'description', 'category', 'image'];
+    // Only allow specific fields to be updated
+    const allowedFields = [
+      'featured', 'stockStatus', 'inventory',
+      'name', 'description', 'price', 'originalPrice', 'discountPercent',
+      'category', 'image', 'images',
+      'brand', 'model', 'delivery', 'paymentMethods',
+      'sections', 'attributes', 'wholesale'
+    ];
     const updateData: Record<string, any> = {};
     for (const key of allowedFields) {
       if (key in body) {

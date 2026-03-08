@@ -5,11 +5,10 @@ import useSWR from 'swr';
 import { useUser } from '@/context/AuthContext';
 import { Send, Video, Phone, ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { LiveKitRoom, VideoConference } from '@livekit/components-react';
-import '@livekit/components-styles';
 import { useSearchParams, useRouter } from 'next/navigation';
 import AdminSelector from '@/components/Chat/AdminSelector';
 import Image from 'next/image';
+import VideoCall from '@/components/VideoCall';
 
 interface Message {
     _id: string;
@@ -33,8 +32,7 @@ export default function ClientMessagesPage() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [sending, setSending] = useState(false);
 
-    // LiveKit
-    const [roomToken, setRoomToken] = useState('');
+    const [callRoom, setCallRoom] = useState('');
     const [isCallActive, setIsCallActive] = useState(false);
 
     const { data: messages, mutate } = useSWR<Message[]>(
@@ -71,20 +69,14 @@ export default function ClientMessagesPage() {
         }
     };
 
-    const handleJoinCall = async (room: string) => {
-        try {
-            const resp = await fetch(`/api/livekit?room=${room}&username=${user?.fullName || 'Client'}`);
-            const data = await resp.json();
-            setRoomToken(data.token);
-            setIsCallActive(true);
-        } catch (e) {
-            console.error(e);
-        }
-    }
+    const handleJoinCall = (room: string) => {
+        setCallRoom(room);
+        setIsCallActive(true);
+    };
 
     const onDisconnected = () => {
         setIsCallActive(false);
-        setRoomToken('');
+        setCallRoom('');
     }
 
     const handleSelectAdmin = (admin: { userId: string }) => {
@@ -123,23 +115,8 @@ export default function ClientMessagesPage() {
             </header>
 
             <main className="flex-1 flex flex-col max-w-3xl mx-auto w-full p-4 h-[calc(100vh-80px)]">
-                {isCallActive && roomToken ? (
-                    <div className="flex-1 flex flex-col bg-slate-950 relative rounded-2xl overflow-hidden border border-white/10">
-                        <LiveKitRoom
-                            video={true}
-                            audio={true}
-                            token={roomToken}
-                            serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
-                            data-lk-theme="default"
-                            style={{ height: '100%' }}
-                            onDisconnected={onDisconnected}
-                        >
-                            <VideoConference />
-                        </LiveKitRoom>
-                        <button onClick={onDisconnected} className="absolute top-4 right-4 bg-red-500 px-4 py-2 rounded text-white z-50">
-                            Leave Call
-                        </button>
-                    </div>
+                {isCallActive ? (
+                    <VideoCall prefilledRoom={callRoom} onDisconnected={onDisconnected} />
                 ) : (
                     <>
                         <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">

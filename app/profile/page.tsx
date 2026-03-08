@@ -58,7 +58,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-[#F5F5F5] pb-[100px] relative font-sans">
       {/* 1. PROFILE HEADER SECTION */}
-      <div className="relative h-[220px] bg-gradient-to-b from-[#FF6B00] to-[#FF8C00] px-4 pt-12 flex flex-col items-center">
+      <div className="relative h-[220px] bg-gradient-to-b from-[#FF6B00] to-[#FF8C00] px-4 flex flex-col items-center">
         {/* Curved Bottom Edge */}
         <div className="absolute bottom-[-1px] left-0 w-full overflow-hidden leading-[0]">
           <svg data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none" className="block w-full h-[30px]">

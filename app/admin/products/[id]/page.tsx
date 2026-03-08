@@ -21,9 +21,15 @@ export default function EditProductPage() {
         const fetchProduct = async () => {
             try {
                 const res = await fetch(`/api/products/${id}`);
-                if (!res.ok) throw new Error('Failed to fetch product');
                 const data = await res.json();
-                setInitialData(data.product);
+
+                if (data.error || !res.ok) {
+                    toast.error('Бараа олдсонгүй');
+                    router.push('/admin/products');
+                    return;
+                }
+
+                setInitialData(data);
             } catch (error) {
                 toast.error('Бараа олдсонгүй');
                 router.push('/admin/products');

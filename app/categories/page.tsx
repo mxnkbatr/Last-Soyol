@@ -163,8 +163,8 @@ export default function CategoriesPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-8 pb-12 flex items-center justify-center">
-        <div className="max-w-7xl mx-auto">
+      <div className="min-h-screen bg-gray-50 pb-12 flex flex-col justify-start">
+        <div className="max-w-7xl mx-auto pt-8">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="bg-white rounded-3xl p-4 space-y-4 animate-pulse">
@@ -180,7 +180,7 @@ export default function CategoriesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-12 lg:pt-12">
+    <div className="min-h-screen bg-gray-50 pb-12">
       <div className="max-w-7xl mx-auto lg:px-8">
 
         <div className="flex flex-col lg:flex-row gap-8">

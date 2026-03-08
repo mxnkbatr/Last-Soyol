@@ -18,6 +18,7 @@ export const viewport: Viewport = {
   maximumScale: 5,
   userScalable: true,
   themeColor: '#FF7900',
+  viewportFit: 'cover',
 };
 
 export const metadata: Metadata = {
@@ -82,7 +83,7 @@ export default function RootLayout({
       <body className={`${inter.className} min-h-screen bg-white antialiased`}>
         <ClientLayout>
           <LuxuryNavbar />
-          <main className="min-h-screen pb-16 md:pb-0 pt-[140px] lg:pt-[132px] relative z-0">{children}</main>
+          <main className="min-h-screen pb-16 md:pb-0 relative z-0">{children}</main>
           <Footer />
         </ClientLayout>
       </body>

@@ -7,9 +7,8 @@ import {
 } from 'lucide-react';
 import UserList from '@/components/Chat/UserList';
 import ChatWindow from '@/components/Chat/ChatWindow';
-import { LiveKitRoom, VideoConference } from '@livekit/components-react';
-import '@livekit/components-styles';
 import { motion } from 'framer-motion';
+import VideoCall from '@/components/VideoCall';
 
 interface User {
     _id: string;
@@ -31,8 +30,7 @@ export default function AdminMessagesPage() {
     const [viewFilter, setViewFilter] = useState<'all' | 'clients' | 'admins'>('all');
 
     // Call State
-    const [roomToken, setRoomToken] = useState('');
-    const [roomName, setRoomName] = useState('');
+    const [callRoom, setCallRoom] = useState('');
     const [isCallActive, setIsCallActive] = useState(false);
     const [callDuration, setCallDuration] = useState(0);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -91,9 +89,6 @@ export default function AdminMessagesPage() {
 
         const room = `call-${Date.now()}`;
         try {
-            const resp = await fetch(`/api/livekit?room=${room}&username=Admin`);
-            const data = await resp.json();
-
             await fetch('/api/messages', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -105,11 +100,9 @@ export default function AdminMessagesPage() {
                 })
             });
 
-            setRoomName(room);
-            setRoomToken(data.token);
+            setCallRoom(room);
             setIsCallActive(true);
             setMobileView('call');
-
         } catch (e) {
             console.error(e);
         }
@@ -117,7 +110,7 @@ export default function AdminMessagesPage() {
 
     const onDisconnected = () => {
         setIsCallActive(false);
-        setRoomToken('');
+        setCallRoom('');
         setMobileView('chat');
     };
 
@@ -193,51 +186,8 @@ export default function AdminMessagesPage() {
                             ${mobileView !== 'list' ? 'flex' : 'hidden lg:flex'} 
                             flex-1 h-full flex-col relative
                         `}>
-                            {isCallActive && roomToken ? (
-                                <div className="absolute inset-0 z-50 flex flex-col bg-slate-950">
-                                    {/* Call Header */}
-                                    <div className="p-4 bg-slate-900/80 backdrop-blur-md border-b border-white/10 flex items-center justify-between">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
-                                                <Video className="w-5 h-5 text-orange-500" />
-                                            </div>
-                                            <div>
-                                                <h3 className="font-bold text-white">{selectedUser?.name || 'Хэрэглэгч'}</h3>
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                                                    <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Шууд холбогдсон</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-4">
-                                            <div className="bg-white/5 px-3 py-1.5 rounded-xl border border-white/10 font-mono text-sm font-bold text-white">
-                                                {formatDuration(callDuration)}
-                                            </div>
-                                            <button
-                                                onClick={onDisconnected}
-                                                className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-red-500/20 transition-all active:scale-95"
-                                            >
-                                                <Phone className="w-4 h-4 rotate-[135deg] fill-current" />
-                                                Дуудлага дуусгах
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {/* Video Grid */}
-                                    <div className="flex-1 relative">
-                                        <LiveKitRoom
-                                            video={true}
-                                            audio={true}
-                                            token={roomToken}
-                                            serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
-                                            data-lk-theme="default"
-                                            style={{ height: '100%' }}
-                                            onDisconnected={onDisconnected}
-                                        >
-                                            <VideoConference />
-                                        </LiveKitRoom>
-                                    </div>
-                                </div>
+                            {isCallActive ? (
+                                <VideoCall prefilledRoom={callRoom} onDisconnected={onDisconnected} />
                             ) : (
                                 <div className="flex-1 h-full bg-slate-950/30 flex flex-col">
                                     {selectedUser ? (

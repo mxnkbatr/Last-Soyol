@@ -53,7 +53,7 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F5F5F7] p-4">
+    <div className="min-h-screen flex flex-col justify-start items-center bg-[#F5F5F7] p-4 pt-16 md:pt-24">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-xl shadow-slate-200/50 p-8 md:p-12">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-black text-slate-900 mb-2">Нэвтрэх</h1>

@@ -85,7 +85,7 @@ export default function MobileFeaturedCarousel({ products }: MobileFeaturedCarou
             const totalWidth = containerRef.current.scrollWidth;
             const singleSetWidth = totalWidth / 3;
             setItemWidth(singleSetWidth);
-            
+
             // Initialize position at -itemWidth (showing Set 2)
             // This allows dragging left (to Set 3) and right (to Set 1)
             x.set(-singleSetWidth);
@@ -112,40 +112,40 @@ export default function MobileFeaturedCarousel({ products }: MobileFeaturedCarou
     useAnimationFrame((t, delta) => {
         let currentX = x.get();
         let shouldUpdate = false;
-        
+
         // 1. Custom Momentum Physics
         if (!isDragging && Math.abs(momentumVelocity.current) > 0.01) {
             // Apply friction
-            momentumVelocity.current *= 0.95; 
+            momentumVelocity.current *= 0.95;
             currentX += momentumVelocity.current * delta;
             shouldUpdate = true;
         } else if (!isDragging && Math.abs(momentumVelocity.current) <= 0.01) {
-             momentumVelocity.current = 0;
+            momentumVelocity.current = 0;
         }
 
         // 2. Auto-scroll logic
         // Only run if not paused, not dragging, and no active momentum
         if (!isPaused && !isDragging && momentumVelocity.current === 0) {
             // Fixed pixel speed for consistency (0.5px per frame approx)
-            const speed = 0.5; 
-            currentX -= speed * (delta / 16); 
+            const speed = 0.5;
+            currentX -= speed * (delta / 16);
             shouldUpdate = true;
         }
-        
+
         // 3. Wrap logic (Only when NOT dragging to avoid fighting the gesture)
         if (!isDragging && itemWidth > 0) {
             // If we've scrolled past Set 2 into Set 3
             if (currentX <= -2 * itemWidth) {
                 currentX += itemWidth;
                 shouldUpdate = true;
-            } 
+            }
             // If we've scrolled back past Set 2 into Set 1
             else if (currentX >= 0) {
                 currentX -= itemWidth;
                 shouldUpdate = true;
             }
         }
-        
+
         if (shouldUpdate) {
             x.set(currentX);
         }
@@ -160,19 +160,19 @@ export default function MobileFeaturedCarousel({ products }: MobileFeaturedCarou
     const onDragEnd = (event: any, info: any) => {
         setIsDragging(false);
         resume();
-        
+
         // Capture velocity from Framer (pixels per second)
         // Convert to pixels per ms for our loop
         const velocityPxPerMs = info.velocity.x / 1000;
         momentumVelocity.current = velocityPxPerMs;
-        
+
         // Handle immediate wrap if drag released out of bounds
         const currentX = x.get();
         if (itemWidth > 0) {
             if (currentX <= -2 * itemWidth) {
-                 x.set(currentX + itemWidth);
+                x.set(currentX + itemWidth);
             } else if (currentX >= 0) {
-                 x.set(currentX - itemWidth);
+                x.set(currentX - itemWidth);
             }
         }
     };
@@ -185,7 +185,7 @@ export default function MobileFeaturedCarousel({ products }: MobileFeaturedCarou
             {dataSet.map((product, i) => {
                 // Create unique key combining product ID, set index, and item index
                 const uniqueKey = `${setIndex}-${product.id || product._id}-${i}`;
-                
+
                 return (
                     <div
                         key={uniqueKey}
@@ -202,7 +202,7 @@ export default function MobileFeaturedCarousel({ products }: MobileFeaturedCarou
                                         sizes="200px"
                                         draggable={false}
                                     />
-                                    
+
                                     {/* 🔥 TOP Badge - Top Right */}
                                     <div className="absolute top-3 right-3 z-10 bg-white/80 backdrop-blur-md text-slate-900 text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1 border border-white/20">
                                         🔥 TOP
@@ -274,14 +274,11 @@ export default function MobileFeaturedCarousel({ products }: MobileFeaturedCarou
                     <h2 className="text-xl font-black text-slate-900 tracking-tight">
                         {t('home', 'featuredProducts')}
                     </h2>
-                    <p className="text-xs text-slate-500 font-medium mt-0.5">
-                        {t('home', 'featuredProductsDesc')}
-                    </p>
                 </div>
             </div>
 
             {/* Infinite Scroll Container */}
-            <div 
+            <div
                 className="relative w-full overflow-hidden"
                 style={{
                     // Gradient Mask for Fade Effect

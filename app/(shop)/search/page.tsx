@@ -100,7 +100,7 @@ function SearchContent() {
     return (
       <div className="min-h-screen bg-[#F8F9FA] pb-24">
         {/* Luxury Search Header for Mobile */}
-        <div className="bg-white px-4 pt-6 pb-4 rounded-b-[40px] shadow-sm">
+        <div className="lg:hidden bg-white px-4 pt-6 pb-4 rounded-b-[40px] shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-black text-gray-900 tracking-tight">{t('nav', 'search')}</h2>
             <div className="flex gap-3">

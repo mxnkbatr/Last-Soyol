@@ -3,12 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useScroll } from 'framer-motion';
 import Image from 'next/image';
 import {
-  Heart, Share2, Star, Zap, ShoppingBag, Truck, MapPin,
+  Heart, Share2, Star, ShoppingBag, Truck,
   Clock, Minus, Plus, ArrowRight, ShieldCheck, Lock, Package, BadgeCheck,
-  CheckCircle2, RotateCcw
+  CheckCircle2, RotateCcw, ChevronLeft, ChevronRight, X,
 } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import { useCartStore } from '@/store/cartStore';
@@ -46,262 +46,180 @@ export type ProductDetailData = {
   attributes?: Record<string, any>;
 };
 
-// --- ANTIGRAVITY PHYSICS HOOKS ---
+// ─────────────────────────────────────────────────────────────────────────────
+// ANTIGRAVITY PHYSICS HOOKS
+// ─────────────────────────────────────────────────────────────────────────────
 
-// 1. Core Antigravity Hook (for slight drift & elastic snap-back)
-function useAntigravity<T extends HTMLElement = HTMLDivElement>(maxX = 12, maxY = 8, lerpAmt = 0.04, decay = 0.72) {
+function useAntigravity<T extends HTMLElement = HTMLDivElement>(
+  maxX = 12, maxY = 8, lerpAmt = 0.04, decay = 0.72
+) {
   const ref = useRef<T>(null);
   const position = useRef({ x: 0, y: 0 });
   const target = useRef({ x: 0, y: 0 });
   const isHovered = useRef(false);
-  const animationFrameId = useRef<number>();
+  const rafId = useRef<number>();
 
   const update = useCallback(() => {
     if (!isHovered.current) {
-      // Snap-back decay
       target.current.x *= decay;
       target.current.y *= decay;
     }
-
     position.current.x += (target.current.x - position.current.x) * lerpAmt;
     position.current.y += (target.current.y - position.current.y) * lerpAmt;
-
     if (ref.current) {
-      ref.current.style.transform = `translate3d(${position.current.x}px, ${position.current.y}px, 0)`;
+      ref.current.style.transform = `translate3d(${position.current.x}px,${position.current.y}px,0)`;
     }
-
-    // Stop loop if resting
     if (!isHovered.current && Math.abs(position.current.x) < 0.01 && Math.abs(position.current.y) < 0.01) {
-      position.current.x = 0;
-      position.current.y = 0;
-      if (ref.current) ref.current.style.transform = `translate3d(0,0,0)`;
+      position.current.x = 0; position.current.y = 0;
+      if (ref.current) ref.current.style.transform = 'translate3d(0,0,0)';
       return;
     }
-
-    animationFrameId.current = requestAnimationFrame(update);
+    rafId.current = requestAnimationFrame(update);
   }, [decay, lerpAmt]);
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!ref.current) return;
     const rect = ref.current.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-
-    // Calculate relative distance (-1 to 1)
-    const dx = Math.max(-1, Math.min(1, (e.clientX - cx) / (rect.width / 2)));
-    const dy = Math.max(-1, Math.min(1, (e.clientY - cy) / (rect.height / 2)));
-
+    const dx = Math.max(-1, Math.min(1, (e.clientX - rect.left - rect.width / 2) / (rect.width / 2)));
+    const dy = Math.max(-1, Math.min(1, (e.clientY - rect.top - rect.height / 2) / (rect.height / 2)));
     target.current.x = dx * maxX;
     target.current.y = dy * maxY;
   };
 
   const handleMouseEnter = () => {
     isHovered.current = true;
-    if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
-    animationFrameId.current = requestAnimationFrame(update);
+    if (rafId.current) cancelAnimationFrame(rafId.current);
+    rafId.current = requestAnimationFrame(update);
   };
 
   const handleMouseLeave = () => {
     isHovered.current = false;
-    target.current.x = 0;
-    target.current.y = 0;
+    target.current.x = 0; target.current.y = 0;
   };
 
-  useEffect(() => {
-    return () => {
-      if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
-    };
-  }, []);
-
+  useEffect(() => () => { if (rafId.current) cancelAnimationFrame(rafId.current); }, []);
   return { ref, handleMouseMove, handleMouseEnter, handleMouseLeave };
 }
 
-// 2. Magnetic Pull Hook (for "Шууд авах" CTA)
 function useMagnetic(radius = 80, lerpAmt = 0.12, decay = 0.72) {
   const ref = useRef<HTMLButtonElement>(null);
   const position = useRef({ x: 0, y: 0 });
   const target = useRef({ x: 0, y: 0 });
   const isHovered = useRef(false);
-  const animationFrameId = useRef<number>();
+  const rafId = useRef<number>();
 
   const update = useCallback(() => {
-    if (!isHovered.current) {
-      target.current.x *= decay;
-      target.current.y *= decay;
-    }
-
+    if (!isHovered.current) { target.current.x *= decay; target.current.y *= decay; }
     position.current.x += (target.current.x - position.current.x) * lerpAmt;
     position.current.y += (target.current.y - position.current.y) * lerpAmt;
-
-    if (ref.current) {
-      ref.current.style.transform = `translate3d(${position.current.x}px, ${position.current.y}px, 0)`;
-    }
-
+    if (ref.current) ref.current.style.transform = `translate3d(${position.current.x}px,${position.current.y}px,0)`;
     if (!isHovered.current && Math.abs(position.current.x) < 0.01 && Math.abs(position.current.y) < 0.01) {
-      position.current.x = 0;
-      position.current.y = 0;
-      if (ref.current) ref.current.style.transform = `translate3d(0,0,0)`;
+      position.current.x = 0; position.current.y = 0;
+      if (ref.current) ref.current.style.transform = 'translate3d(0,0,0)';
       return;
     }
-
-    animationFrameId.current = requestAnimationFrame(update);
+    rafId.current = requestAnimationFrame(update);
   }, [decay, lerpAmt]);
 
   useEffect(() => {
-    const handleGlobalMouseMove = (e: MouseEvent) => {
+    const onMove = (e: MouseEvent) => {
       if (!ref.current) return;
       const rect = ref.current.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-
-      const distance = Math.sqrt(Math.pow(e.clientX - cx, 2) + Math.pow(e.clientY - cy, 2));
-
-      if (distance < radius) {
-        if (!isHovered.current) {
-          isHovered.current = true;
-          if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
-          animationFrameId.current = requestAnimationFrame(update);
-        }
-        // Pull strength based on distance
-        const strength = 1 - distance / radius;
-        target.current.x = (e.clientX - cx) * 0.4 * strength;
-        target.current.y = (e.clientY - cy) * 0.4 * strength;
+      const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+      const dist = Math.sqrt((e.clientX - cx) ** 2 + (e.clientY - cy) ** 2);
+      if (dist < radius) {
+        if (!isHovered.current) { isHovered.current = true; if (rafId.current) cancelAnimationFrame(rafId.current); rafId.current = requestAnimationFrame(update); }
+        const s = 1 - dist / radius;
+        target.current.x = (e.clientX - cx) * 0.4 * s;
+        target.current.y = (e.clientY - cy) * 0.4 * s;
       } else if (isHovered.current) {
-        isHovered.current = false;
-        target.current.x = 0;
-        target.current.y = 0;
+        isHovered.current = false; target.current.x = 0; target.current.y = 0;
       }
     };
-
-    window.addEventListener('mousemove', handleGlobalMouseMove);
-    return () => {
-      window.removeEventListener('mousemove', handleGlobalMouseMove);
-      if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
-    };
+    window.addEventListener('mousemove', onMove);
+    return () => { window.removeEventListener('mousemove', onMove); if (rafId.current) cancelAnimationFrame(rafId.current); };
   }, [radius, update]);
 
   return { ref };
 }
 
-// 3. Parallax Tilt Hook (for Price Card)
 function useParallaxTilt(maxRotate = 4, perspective = 800) {
   const ref = useRef<HTMLDivElement>(null);
   const position = useRef({ rx: 0, ry: 0 });
   const target = useRef({ rx: 0, ry: 0 });
   const isHovered = useRef(false);
-  const animationFrameId = useRef<number>();
+  const rafId = useRef<number>();
 
   const update = useCallback(() => {
-    if (!isHovered.current) {
-      target.current.rx *= 0.8;
-      target.current.ry *= 0.8;
-    }
-
+    if (!isHovered.current) { target.current.rx *= 0.8; target.current.ry *= 0.8; }
     position.current.rx += (target.current.rx - position.current.rx) * 0.1;
     position.current.ry += (target.current.ry - position.current.ry) * 0.1;
-
-    if (ref.current) {
-      ref.current.style.transform = `perspective(${perspective}px) rotateX(${position.current.rx}deg) rotateY(${position.current.ry}deg)`;
-    }
-
+    if (ref.current) ref.current.style.transform = `perspective(${perspective}px) rotateX(${position.current.rx}deg) rotateY(${position.current.ry}deg)`;
     if (!isHovered.current && Math.abs(position.current.rx) < 0.01 && Math.abs(position.current.ry) < 0.01) {
-      position.current.rx = 0;
-      position.current.ry = 0;
+      position.current.rx = 0; position.current.ry = 0;
       if (ref.current) ref.current.style.transform = `perspective(${perspective}px) rotateX(0deg) rotateY(0deg)`;
       return;
     }
-
-    animationFrameId.current = requestAnimationFrame(update);
+    rafId.current = requestAnimationFrame(update);
   }, [perspective]);
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!ref.current) return;
     const rect = ref.current.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-
-    const dx = Math.max(-1, Math.min(1, (e.clientX - cx) / (rect.width / 2)));
-    const dy = Math.max(-1, Math.min(1, (e.clientY - cy) / (rect.height / 2)));
-
-    // Invert Y for accurate 3D tilt
+    const dx = Math.max(-1, Math.min(1, (e.clientX - rect.left - rect.width / 2) / (rect.width / 2)));
+    const dy = Math.max(-1, Math.min(1, (e.clientY - rect.top - rect.height / 2) / (rect.height / 2)));
     target.current.rx = dy * -maxRotate;
     target.current.ry = dx * maxRotate;
   };
 
   const handleMouseEnter = () => {
     isHovered.current = true;
-    if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
-    animationFrameId.current = requestAnimationFrame(update);
+    if (rafId.current) cancelAnimationFrame(rafId.current);
+    rafId.current = requestAnimationFrame(update);
   };
 
   const handleMouseLeave = () => {
-    isHovered.current = false;
-    target.current.rx = 0;
-    target.current.ry = 0;
+    isHovered.current = false; target.current.rx = 0; target.current.ry = 0;
   };
 
   return { ref, handleMouseMove, handleMouseEnter, handleMouseLeave };
 }
 
-// 4. Floating Orb Hook
 function useFloatingOrb(lerpAmt = 0.035) {
   const ref = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const position = useRef({ x: 0, y: 0 });
   const target = useRef({ x: 0, y: 0 });
-  const animationFrameId = useRef<number>();
+  const rafId = useRef<number>();
 
   const update = useCallback(() => {
     position.current.x += (target.current.x - position.current.x) * lerpAmt;
     position.current.y += (target.current.y - position.current.y) * lerpAmt;
-
-    if (ref.current) {
-      ref.current.style.transform = `translate3d(${position.current.x}px, ${position.current.y}px, 0)`;
-    }
-
-    animationFrameId.current = requestAnimationFrame(update);
+    if (ref.current) ref.current.style.transform = `translate3d(${position.current.x}px,${position.current.y}px,0)`;
+    rafId.current = requestAnimationFrame(update);
   }, [lerpAmt]);
 
   useEffect(() => {
-    const handleGlobalMouseMove = (e: MouseEvent) => {
+    const onMove = (e: MouseEvent) => {
       if (!containerRef.current) return;
-
       const rect = containerRef.current.getBoundingClientRect();
-      // Only track if mouse is over/near the container
       if (e.clientX < rect.left - 200 || e.clientX > rect.right + 200) return;
-
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-
-      // Keep orb bounded within container slightly
-      const maxDistX = rect.width / 2 - 90; // 90 is half orb size
-      const maxDistY = rect.height / 2 - 90;
-
-      let dx = e.clientX - cx;
-      let dy = e.clientY - cy;
-
-      // Clamp
-      dx = Math.max(-maxDistX, Math.min(maxDistX, dx));
-      dy = Math.max(-maxDistY, Math.min(maxDistY, dy));
-
-      target.current.x = dx;
-      target.current.y = dy;
+      const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+      const maxX = rect.width / 2 - 90, maxY = rect.height / 2 - 90;
+      target.current.x = Math.max(-maxX, Math.min(maxX, e.clientX - cx));
+      target.current.y = Math.max(-maxY, Math.min(maxY, e.clientY - cy));
     };
-
-    window.addEventListener('mousemove', handleGlobalMouseMove);
-    animationFrameId.current = requestAnimationFrame(update);
-
-    return () => {
-      window.removeEventListener('mousemove', handleGlobalMouseMove);
-      if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
-    };
+    window.addEventListener('mousemove', onMove);
+    rafId.current = requestAnimationFrame(update);
+    return () => { window.removeEventListener('mousemove', onMove); if (rafId.current) cancelAnimationFrame(rafId.current); };
   }, [update]);
 
   return { ref, containerRef };
 }
 
-
-// --- MAIN COMPONENT ---
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN COMPONENT
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function ProductDetailClient({ product }: { product: ProductDetailData }) {
   const { isAuthenticated } = useAuth();
@@ -315,23 +233,28 @@ export default function ProductDetailClient({ product }: { product: ProductDetai
   const { addItem } = useCartStore();
   const { t } = useTranslation();
 
-  // Scroll detection for sticky header
   const { scrollY } = useScroll();
   const [isScrolled, setIsScrolled] = useState(false);
   useEffect(() => {
-    const unsubscribe = scrollY.on('change', (y) => setIsScrolled(y > 300));
-    return () => unsubscribe();
+    const unsub = scrollY.on('change', (y) => setIsScrolled(y > 300));
+    return () => unsub();
   }, [scrollY]);
 
-
-  // Image Data
   const images: string[] = product.images?.length
     ? product.images
     : product.image
       ? [product.image]
       : ['/placeholder-product.png'];
 
-  // Handlers
+  const discount = product.originalPrice && product.originalPrice > product.price
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+    : 0;
+
+  const savings = product.originalPrice && product.originalPrice > product.price
+    ? product.originalPrice - product.price
+    : 0;
+
+  // ── Handlers (all unchanged) ───────────────────────────────────────────────
   const handleWishlist = () => {
     if (!isAuthenticated) return toast.error('Нэвтрэх шаардлагатай', { style: { borderRadius: '16px' } });
     setIsWishlisted(!isWishlisted);
@@ -340,7 +263,7 @@ export default function ProductDetailClient({ product }: { product: ProductDetai
 
   const handleShare = async () => {
     if (navigator.share) {
-      try { await navigator.share({ title: product.name, url: window.location.href }); } catch (err) { }
+      try { await navigator.share({ title: product.name, url: window.location.href }); } catch { }
     } else {
       toast.success('Link copied to clipboard');
       navigator.clipboard.writeText(window.location.href);
@@ -354,7 +277,7 @@ export default function ProductDetailClient({ product }: { product: ProductDetai
         image: product.image || '',
         rating: product.rating ?? 0,
         stockStatus: product.stockStatus as any,
-        description: product.description || undefined
+        description: product.description || undefined,
       });
     }
     toast.custom((tInst) => (
@@ -362,7 +285,7 @@ export default function ProductDetailClient({ product }: { product: ProductDetai
         <div className="flex items-start">
           <CheckCircle2 className="h-8 w-8 text-[#FF5000]" />
           <div className="ml-3">
-            <p className="font-bold text-slate-900 font-sora">Сагсанд орлоо</p>
+            <p className="font-bold text-slate-900" style={{ fontFamily: 'Sora, sans-serif' }}>Сагсанд орлоо</p>
             <p className="mt-1 text-sm text-slate-500">{product.name}</p>
           </div>
         </div>
@@ -375,59 +298,58 @@ export default function ProductDetailClient({ product }: { product: ProductDetai
     router.push('/checkout');
   };
 
-  // Physics Hooks Setup
+  // ── Physics hooks ──────────────────────────────────────────────────────────
   const mainImgPhysics = useAntigravity<HTMLDivElement>(12, 8, 0.04, 0.72);
-  const thumbPhysics = useAntigravity<HTMLDivElement>(6, 6, 0.05, 0.72);
   const minusPhysics = useAntigravity<HTMLButtonElement>(8, 8, 0.06, 0.7);
   const plusPhysics = useAntigravity<HTMLButtonElement>(8, 8, 0.06, 0.7);
-  const magneticBuyTrigger = useMagnetic(80, 0.12, 0.72);
-  const tiltPhysics = useParallaxTilt(4, 800);
-  const orbPhysics = useFloatingOrb(0.035);
-
-  const discount = product.originalPrice && product.originalPrice > product.price
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-    : 0;
+  const magneticBuy = useMagnetic(80, 0.12, 0.72);
+  const tilt = useParallaxTilt(4, 800);
+  const orb = useFloatingOrb(0.035);
 
   return (
     <>
-      {/* 1. Global Font Injection & Reset */}
+      {/* ── Font injection ── */}
       <style dangerouslySetInnerHTML={{
         __html: `
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
         .font-sora { font-family: 'Sora', sans-serif; }
-        .font-dm { font-family: 'DM Sans', sans-serif; }
+        .font-dm  { font-family: 'DM Sans', sans-serif; }
         body { background-color: #FAFAF9; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
       `}} />
 
-      <div className="min-h-screen pb-32 md:pb-24 font-dm text-slate-600 bg-[#FAFAF9] overflow-hidden">
+      <div className="min-h-screen pb-32 md:pb-20 font-dm bg-[#FAFAF9] text-slate-600 overflow-hidden">
 
-        {/* 2. Desktop Sticky Header */}
+        {/* ── Sticky header ─────────────────────────────────────────────── */}
         <AnimatePresence>
           {isScrolled && (
             <motion.div
-              initial={{ y: -80, opacity: 0 }}
+              initial={{ y: -64, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -80, opacity: 0 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed top-0 left-0 right-0 z-[100] bg-white/90 backdrop-blur-2xl border-b border-slate-100 hidden md:block shadow-sm"
+              exit={{ y: -64, opacity: 0 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+              className="fixed top-0 left-0 right-0 z-[100] hidden md:block"
+              style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(0,0,0,0.06)' }}
             >
               <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 relative rounded-xl overflow-hidden border border-slate-100 bg-white shrink-0">
-                    <Image src={product.image || '/placeholder-product.png'} alt={product.name} fill className="object-contain p-1" />
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl overflow-hidden border border-slate-100 bg-white shrink-0 relative">
+                    <Image src={product.image || '/placeholder-product.png'} alt={product.name} fill className="object-contain p-1.5" />
                   </div>
-                  <div className="flex flex-col">
-                    <span className="font-bold text-slate-900 line-clamp-1">{product.name}</span>
-                    <span className="text-[#FF5000] font-sora font-bold text-sm">{formatPrice(product.price)}</span>
+                  <div>
+                    <p className="font-bold text-slate-900 text-sm leading-tight line-clamp-1 max-w-xs">{product.name}</p>
+                    <p className="font-sora font-bold text-[#FF5000] text-sm leading-none mt-0.5">{formatPrice(product.price)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <motion.button whileTap={{ scale: 0.95 }} onClick={handleAddToCart} className="px-5 py-2.5 rounded-2xl bg-slate-100 text-slate-900 font-bold hover:bg-slate-200 transition-colors">
+                  <motion.button whileTap={{ scale: 0.95 }} onClick={handleAddToCart}
+                    className="px-5 py-2.5 rounded-2xl bg-slate-100 text-slate-900 font-bold text-sm hover:bg-slate-200 transition-colors">
                     Сагсанд нэмэх
                   </motion.button>
-                  <motion.button whileTap={{ scale: 0.95 }} onClick={handleBuyNow} className="px-5 py-2.5 rounded-2xl bg-[#FF5000] text-white font-bold shadow-lg shadow-orange-500/25 hover:bg-[#E64500] transition-colors">
+                  <motion.button whileTap={{ scale: 0.95 }} onClick={handleBuyNow}
+                    className="px-5 py-2.5 rounded-2xl bg-[#FF5000] text-white font-bold text-sm shadow-lg shadow-orange-500/25 hover:bg-[#E64500] transition-colors">
                     Шууд авах
                   </motion.button>
                 </div>
@@ -436,39 +358,56 @@ export default function ProductDetailClient({ product }: { product: ProductDetai
           )}
         </AnimatePresence>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-12">
-
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-14">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16">
 
-            {/* --- LEFT: GALLERY --- */}
+            {/* ── LEFT: GALLERY ───────────────────────────────────────────── */}
             <div className="lg:col-span-6 xl:col-span-7 flex flex-col gap-4">
 
-              {/* Main Image Container */}
+              {/* Main image */}
               <div
-                className="relative aspect-square w-full rounded-[2rem] bg-white border border-slate-100 shadow-sm overflow-hidden"
+                className="group relative aspect-square w-full rounded-3xl bg-white border border-slate-100 shadow-sm overflow-hidden"
                 onMouseMove={mainImgPhysics.handleMouseMove}
                 onMouseEnter={mainImgPhysics.handleMouseEnter}
                 onMouseLeave={mainImgPhysics.handleMouseLeave}
               >
-                {/* Desktop AnimatePresence */}
-                <div className="hidden md:block w-full h-full relative" onClick={() => setShowLightbox(true)}>
+                {/* Desktop fade image */}
+                <div className="hidden md:block w-full h-full" onClick={() => setShowLightbox(true)}>
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={activeImageIndex}
-                      initial={{ opacity: 0, scale: 0.98 }}
+                      initial={{ opacity: 0, scale: 0.97 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="w-full h-full cursor-zoom-in flex items-center justify-center p-8"
+                      transition={{ duration: 0.28 }}
+                      className="w-full h-full cursor-zoom-in absolute inset-0 flex items-center justify-center p-8"
                     >
                       <div ref={mainImgPhysics.ref} className="w-full h-full relative origin-center">
                         <Image src={images[activeImageIndex]} alt={product.name} fill className="object-contain pointer-events-none" priority />
                       </div>
                     </motion.div>
                   </AnimatePresence>
+
+                  {/* Desktop arrow nav */}
+                  {images.length > 1 && (<>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setActiveImageIndex(p => Math.max(0, p - 1)); }}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity border border-slate-100 text-slate-600 hover:text-[#FF5000] disabled:opacity-30"
+                      disabled={activeImageIndex === 0}
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setActiveImageIndex(p => Math.min(images.length - 1, p + 1)); }}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity border border-slate-100 text-slate-600 hover:text-[#FF5000] disabled:opacity-30"
+                      disabled={activeImageIndex === images.length - 1}
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </>)}
                 </div>
 
-                {/* Mobile Drag Carousel */}
+                {/* Mobile swipe carousel */}
                 <div className="md:hidden w-full h-full relative overflow-hidden" onClick={() => setShowLightbox(true)}>
                   <motion.div
                     drag="x"
@@ -478,7 +417,7 @@ export default function ProductDetailClient({ product }: { product: ProductDetai
                       else if (info.offset.x > 80 && activeImageIndex > 0) setActiveImageIndex(p => p - 1);
                     }}
                     animate={{ x: `-${activeImageIndex * 100}%` }}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                     className="flex w-full h-full"
                   >
                     {images.map((img, i) => (
@@ -487,15 +426,19 @@ export default function ProductDetailClient({ product }: { product: ProductDetai
                       </div>
                     ))}
                   </motion.div>
-                  {/* Mobile Dots */}
-                  <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2 z-10">
+                  {/* Dots */}
+                  <div className="absolute bottom-5 left-0 right-0 flex justify-center gap-2 z-10">
                     {images.map((_, i) => (
-                      <div key={i} className={`h-1.5 rounded-full transition-all ${activeImageIndex === i ? 'w-6 bg-[#FF5000]' : 'w-2 bg-slate-300'}`} />
+                      <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${activeImageIndex === i ? 'w-6 bg-[#FF5000]' : 'w-2 bg-slate-300'}`} />
                     ))}
+                  </div>
+                  {/* Count badge */}
+                  <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                    {activeImageIndex + 1}/{images.length}
                   </div>
                 </div>
 
-                {/* Badges Overlay */}
+                {/* Badges */}
                 <div className="absolute top-5 left-5 flex flex-col gap-2 z-10 select-none">
                   {product.stockStatus === 'in-stock' ? (
                     <div className="flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-3 py-1.5 border border-emerald-100 rounded-2xl shadow-sm">
@@ -516,17 +459,19 @@ export default function ProductDetailClient({ product }: { product: ProductDetai
                 </div>
 
                 {/* FABs */}
-                <div className="absolute top-5 right-5 flex flex-col gap-3 z-10">
-                  <motion.button whileTap={{ scale: 0.88 }} onClick={(e) => { e.stopPropagation(); handleWishlist(); }} className="w-10 h-10 bg-white/95 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-sm border border-slate-100 text-slate-400 hover:text-red-500 transition-colors">
+                <div className="absolute top-5 right-5 flex flex-col gap-2.5 z-10">
+                  <motion.button whileTap={{ scale: 0.88 }} onClick={e => { e.stopPropagation(); handleWishlist(); }}
+                    className="w-10 h-10 bg-white/95 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-sm border border-slate-100 text-slate-400 hover:text-red-500 transition-colors">
                     <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} strokeWidth={2} />
                   </motion.button>
-                  <motion.button whileTap={{ scale: 0.88 }} onClick={(e) => { e.stopPropagation(); handleShare(); }} className="w-10 h-10 bg-white/95 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-sm border border-slate-100 text-slate-400 hover:text-blue-500 transition-colors">
+                  <motion.button whileTap={{ scale: 0.88 }} onClick={e => { e.stopPropagation(); handleShare(); }}
+                    className="w-10 h-10 bg-white/95 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-sm border border-slate-100 text-slate-400 hover:text-blue-500 transition-colors">
                     <Share2 className="w-5 h-5" strokeWidth={2} />
                   </motion.button>
                 </div>
               </div>
 
-              {/* Thumbnail Strip (Desktop) */}
+              {/* Thumbnail strip */}
               {images.length > 1 && (
                 <div className="hidden md:flex gap-3 overflow-x-auto hide-scrollbar py-2 px-1">
                   {images.map((img, i) => (
@@ -534,17 +479,14 @@ export default function ProductDetailClient({ product }: { product: ProductDetai
                       key={i}
                       onMouseEnter={() => setActiveImageIndex(i)}
                       onClick={() => setActiveImageIndex(i)}
-                      className="group relative"
+                      className="relative shrink-0"
                     >
-                      <div className={`w-20 h-20 rounded-2xl overflow-hidden bg-white border-2 transition-all ${activeImageIndex === i
+                      <div className={`w-20 h-20 rounded-2xl overflow-hidden bg-white border-2 transition-all duration-200 ${activeImageIndex === i
                         ? 'border-[#FF5000] shadow-[0_0_0_4px_rgba(255,80,0,0.1)]'
-                        : 'border-slate-100 opacity-60 hover:opacity-100'
+                        : 'border-slate-100 opacity-60 hover:opacity-100 hover:border-slate-200'
                         }`}>
-                        <div
-                          className="w-full h-full relative"
-                        // Extremely simplified physics for thumbs to prevent complex ref mapping in array
-                        >
-                          <Image src={img} alt="" fill className="object-contain p-2" />
+                        <div className="w-full h-full relative p-1.5">
+                          <Image src={img} alt="" fill className="object-contain" />
                         </div>
                       </div>
                     </button>
@@ -552,127 +494,157 @@ export default function ProductDetailClient({ product }: { product: ProductDetai
                 </div>
               )}
 
-              {/* Trust Grid */}
-              <div className="hidden md:grid grid-cols-3 gap-4 mt-4">
-                <div className="flex flex-col items-center justify-center bg-white p-4 rounded-3xl border border-slate-100 text-center">
-                  <div className="w-10 h-10 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-2"><Truck className="w-5 h-5" /></div>
-                  <span className="font-bold text-slate-900 text-sm">Шуурхай хүргэлт</span>
-                  <span className="text-xs text-slate-500">{product.delivery || 'Хот дотор үнэгүй'}</span>
-                </div>
-                <div className="flex flex-col items-center justify-center bg-white p-4 rounded-3xl border border-slate-100 text-center">
-                  <div className="w-10 h-10 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-2"><ShieldCheck className="w-5 h-5" /></div>
-                  <span className="font-bold text-slate-900 text-sm">Баталгаат хугацаа</span>
-                  <span className="text-xs text-slate-500">100% Оригинал</span>
-                </div>
-                <div className="flex flex-col items-center justify-center bg-white p-4 rounded-3xl border border-slate-100 text-center">
-                  <div className="w-10 h-10 bg-purple-50 text-purple-500 rounded-full flex items-center justify-center mb-2"><RotateCcw className="w-5 h-5" /></div>
-                  <span className="font-bold text-slate-900 text-sm">Буцаалт хэвийн</span>
-                  <span className="text-xs text-slate-500">7 хоногт буцаах</span>
-                </div>
+              {/* Trust grid */}
+              <div className="hidden md:grid grid-cols-3 gap-3 mt-2">
+                {[
+                  { icon: Truck, color: 'blue', bg: 'bg-blue-50', text: 'text-blue-500', label: 'Шуурхай хүргэлт', sub: product.delivery || 'Хот дотор үнэгүй' },
+                  { icon: ShieldCheck, color: 'emerald', bg: 'bg-emerald-50', text: 'text-emerald-500', label: 'Баталгаат хугацаа', sub: '100% Оригинал' },
+                  { icon: RotateCcw, color: 'purple', bg: 'bg-purple-50', text: 'text-purple-500', label: 'Буцаалт хэвийн', sub: '7 хоногт буцаах' },
+                ].map(({ icon: Icon, bg, text, label, sub }) => (
+                  <div key={label} className="flex flex-col items-center justify-center bg-white p-5 rounded-3xl border border-slate-100 text-center gap-2">
+                    <div className={`w-10 h-10 ${bg} ${text} rounded-full flex items-center justify-center`}>
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <span className="font-bold text-slate-900 text-[13px] leading-tight">{label}</span>
+                    <span className="text-xs text-slate-400">{sub}</span>
+                  </div>
+                ))}
               </div>
-
             </div>
 
+            {/* ── RIGHT: INFO PANEL ────────────────────────────────────────── */}
+            <div ref={orb.containerRef} className="lg:col-span-6 xl:col-span-5 relative">
 
-            {/* --- RIGHT: INFO PANEL --- */}
-            <div ref={orbPhysics.containerRef} className="lg:col-span-6 xl:col-span-5 relative">
-
-              {/* Floating Orb */}
+              {/* Floating orb */}
               <div className="absolute inset-0 pointer-events-none overflow-hidden z-0 rounded-[3rem] hidden md:block" style={{ margin: '-2rem' }}>
                 <div
-                  ref={orbPhysics.ref}
-                  className="absolute top-1/2 left-1/2 w-[180px] h-[180px] rounded-full bg-[#FF5000]/20 blur-[60px] -translate-x-1/2 -translate-y-1/2"
+                  ref={orb.ref}
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 blur-3xl rounded-full"
+                  style={{ width: 180, height: 180, background: 'radial-gradient(circle, rgba(255,80,0,0.15) 0%, transparent 70%)' }}
                 />
               </div>
 
-              {/* Content sits above orb */}
               <div className="relative z-10 flex flex-col gap-6">
 
-                {/* Brand & Rating */}
-                <div className="flex justify-between items-center">
-                  <Link href={`/store/${product.category}`} className="flex items-center gap-1.5 text-[#FF5000] font-bold text-sm tracking-wide bg-orange-50 px-3 py-1.5 rounded-full hover:bg-orange-100 transition-colors uppercase">
-                    <BadgeCheck className="w-4 h-4" />
+                {/* Brand & rating row */}
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <Link href={`/store/${product.category}`}
+                    className="flex items-center gap-1.5 text-[#FF5000] font-bold text-xs tracking-widest bg-orange-50 px-3.5 py-1.5 rounded-full hover:bg-orange-100 transition-colors uppercase border border-orange-100">
+                    <BadgeCheck className="w-3.5 h-3.5" />
                     {product.brand || product.category}
                   </Link>
-                  <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full">
-                    <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                  <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-100">
+                    <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
                     <span className="font-bold text-slate-900 text-sm">{rating}</span>
+                    {product.reviewCount ? <span className="text-slate-400 text-xs">({product.reviewCount})</span> : null}
                   </div>
                 </div>
 
                 {/* Title */}
-                <h1 className="font-sora font-bold text-3xl md:text-4xl text-slate-900 leading-[1.15] tracking-tight">
+                <h1 className="font-sora font-bold text-3xl md:text-4xl text-slate-900 leading-[1.12] tracking-tight">
                   {product.name}
                 </h1>
 
-                {/* Parallax Price Card */}
+                {/* Price card with parallax tilt */}
                 <div
-                  className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm relative overflow-hidden"
-                  onMouseMove={tiltPhysics.handleMouseMove}
-                  onMouseEnter={tiltPhysics.handleMouseEnter}
-                  onMouseLeave={tiltPhysics.handleMouseLeave}
+                  className="bg-white rounded-3xl p-5 border border-orange-100 shadow-sm relative overflow-hidden"
+                  onMouseMove={tilt.handleMouseMove}
+                  onMouseEnter={tilt.handleMouseEnter}
+                  onMouseLeave={tilt.handleMouseLeave}
                 >
-                  <div ref={tiltPhysics.ref} className="relative z-10 origin-center bg-white">
-                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Үнэ</p>
-                    <div className="flex items-end gap-4">
-                      <span className="font-sora font-extrabold text-4xl lg:text-5xl text-[#FF5000] tracking-tighter">
+                  <div ref={tilt.ref} className="origin-center bg-white">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Үнэ</p>
+
+                    {/* Price row */}
+                    <div className="flex items-end gap-4 flex-wrap">
+                      <span className="font-sora font-extrabold text-4xl lg:text-5xl text-[#FF5000] tracking-tighter leading-none">
                         {formatPrice(product.price)}
                       </span>
                       {product.originalPrice && (
-                        <span className="text-lg lg:text-xl font-bold text-slate-300 line-through decoration-2 decoration-slate-200 uppercase mb-1">
+                        <span className="text-lg font-bold text-slate-300 line-through decoration-slate-300 leading-none mb-0.5">
                           {formatPrice(product.originalPrice)}
                         </span>
                       )}
                     </div>
+
+                    {/* Savings badge + stock status */}
+                    <div className="flex items-center gap-3 mt-3 flex-wrap">
+                      {savings > 0 && (
+                        <div className="flex items-center gap-1.5 bg-orange-50 text-orange-600 px-3 py-1.5 rounded-full text-xs font-bold border border-orange-100">
+                          {formatPrice(savings)} хэмнэлт · {discount}%
+                        </div>
+                      )}
+                      {/* Stock pulse */}
+                      <div className="flex items-center gap-1.5">
+                        <div className={`relative w-2 h-2 rounded-full ${product.stockStatus === 'in-stock' ? 'bg-emerald-500' : 'bg-amber-500'}`}>
+                          <div className={`absolute inset-0 rounded-full animate-ping ${product.stockStatus === 'in-stock' ? 'bg-emerald-500' : 'bg-amber-500'} opacity-60`} />
+                        </div>
+                        <span className={`text-xs font-bold ${product.stockStatus === 'in-stock' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                          {product.stockStatus === 'in-stock' ? 'Бэлэн байгаа' : 'Захиалгаар'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Short Desc */}
+                {/* Short description */}
                 <p className="text-slate-500 text-sm font-medium leading-relaxed line-clamp-3">
                   {product.description || 'Дээд зэргийн чанартай, албан ёсны эрхтэй борлуулагдаж буй бүтээгдэхүүн. Орчин үеийн загвар, онцгой шийдэл.'}
                 </p>
 
-                {/* Spec Pills */}
-                <div className="flex flex-wrap gap-2 text-xs font-bold text-slate-600">
-                  <span className="bg-white px-3 py-2 rounded-xl border border-slate-100 shadow-sm">📍 Баталгаат дэлгүүр</span>
-                  <span className="bg-white px-3 py-2 rounded-xl border border-slate-100 shadow-sm">💳 QPay & SocialPay</span>
-                  <span className="bg-white px-3 py-2 rounded-xl border border-slate-100 shadow-sm">📦 Хүргэлт: {product.delivery || 'Хэвийн'}</span>
+                {/* Spec pills */}
+                <div className="flex flex-wrap gap-2">
+                  {product.brand && (
+                    <span className="bg-slate-50 text-slate-700 px-3 py-1.5 rounded-full text-xs font-bold border border-slate-100 shadow-sm">
+                      🏷️ {product.brand}
+                    </span>
+                  )}
+                  {product.model && (
+                    <span className="bg-slate-50 text-slate-700 px-3 py-1.5 rounded-full text-xs font-bold border border-slate-100 shadow-sm">
+                      📱 {product.model}
+                    </span>
+                  )}
+                  <span className="bg-slate-50 text-slate-700 px-3 py-1.5 rounded-full text-xs font-bold border border-slate-100 shadow-sm">
+                    📦 {product.delivery || 'Хэвийн хүргэлт'}
+                  </span>
+                  <span className="bg-slate-50 text-slate-700 px-3 py-1.5 rounded-full text-xs font-bold border border-slate-100 shadow-sm">
+                    💳 QPay · SocialPay
+                  </span>
                 </div>
 
-                <hr className="border-slate-100 my-2" />
+                <hr className="border-slate-100" />
 
                 {/* Quantity & CTA */}
                 <div className="space-y-4">
+                  {/* Quantity */}
                   <div className="flex items-center gap-4">
                     <span className="font-bold text-slate-900 text-sm">Тоо:</span>
-                    <div className="flex items-center gap-2 bg-white p-2 rounded-2xl border border-slate-100 shadow-sm">
+                    <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm">
                       <div
                         onMouseMove={minusPhysics.handleMouseMove}
                         onMouseEnter={minusPhysics.handleMouseEnter}
                         onMouseLeave={minusPhysics.handleMouseLeave}
-                        className="cursor-pointer"
                       >
                         <motion.button
                           ref={minusPhysics.ref}
                           whileTap={{ scale: 0.9 }}
                           onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                          className="w-10 h-10 flex items-center justify-center bg-slate-50 rounded-xl text-slate-600 hover:text-[#FF5000] hover:bg-orange-50 transition-colors"
+                          className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-600 hover:text-[#FF5000] hover:bg-orange-50 transition-colors"
                         >
                           <Minus className="w-4 h-4" strokeWidth={3} />
                         </motion.button>
                       </div>
-                      <span className="w-8 flex justify-center font-sora font-bold text-lg text-slate-900">{quantity}</span>
+                      <span className="w-8 text-center font-sora font-bold text-lg text-slate-900">{quantity}</span>
                       <div
                         onMouseMove={plusPhysics.handleMouseMove}
                         onMouseEnter={plusPhysics.handleMouseEnter}
                         onMouseLeave={plusPhysics.handleMouseLeave}
-                        className="cursor-pointer"
                       >
                         <motion.button
                           ref={plusPhysics.ref}
                           whileTap={{ scale: 0.9 }}
                           onClick={() => setQuantity(Math.min(product.inventory ?? 10, quantity + 1))}
-                          className="w-10 h-10 flex items-center justify-center bg-slate-50 rounded-xl text-slate-600 hover:text-[#FF5000] hover:bg-orange-50 transition-colors"
+                          className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-600 hover:text-[#FF5000] hover:bg-orange-50 transition-colors"
                         >
                           <Plus className="w-4 h-4" strokeWidth={3} />
                         </motion.button>
@@ -680,51 +652,60 @@ export default function ProductDetailClient({ product }: { product: ProductDetai
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 pt-2 hidden md:grid">
+                  {/* Desktop CTAs */}
+                  <div className="hidden md:grid grid-cols-2 gap-3 pt-1">
                     <motion.button
                       whileTap={{ scale: 0.97 }}
                       onClick={handleAddToCart}
-                      className="py-4 rounded-2xl bg-white border-2 border-slate-100 text-slate-900 font-bold hover:border-slate-300 transition-colors flex justify-center items-center gap-2"
+                      className="py-4 rounded-2xl bg-white border-2 border-slate-200 text-slate-900 font-bold hover:border-slate-300 transition-colors flex items-center justify-center gap-2"
                     >
                       <ShoppingBag className="w-5 h-5" strokeWidth={2} />
-                      Сагсанд
+                      Сагсанд нэмэх
                     </motion.button>
 
                     <button
-                      ref={magneticBuyTrigger.ref}
+                      ref={magneticBuy.ref}
                       onClick={handleBuyNow}
-                      className="py-4 rounded-2xl bg-[#FF5000] text-white font-bold shadow-[0_12px_30px_rgba(255,80,0,0.25)] hover:bg-[#E64500] transition-colors flex justify-center items-center gap-2"
+                      className="py-4 rounded-2xl bg-[#FF5000] text-white font-bold shadow-[0_12px_30px_rgba(255,80,0,0.28)] hover:bg-[#E64500] transition-colors flex items-center justify-center gap-2"
                     >
                       Шууд авах
                       <ArrowRight className="w-5 h-5" strokeWidth={2} />
                     </button>
                   </div>
 
-                  <div className="flex justify-center gap-6 pt-2 hidden md:flex">
-                    <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-slate-400"><Lock className="w-3 h-3" />Аюулгүй гүйлгээ</span>
-                    <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-slate-400"><ShieldCheck className="w-3 h-3" />Баталгаат</span>
+                  {/* Security row */}
+                  <div className="hidden md:flex justify-center gap-6">
+                    <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-slate-400">
+                      <Lock className="w-3 h-3" />Аюулгүй гүйлгээ
+                    </span>
+                    <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-slate-400">
+                      <ShieldCheck className="w-3 h-3" />Баталгаат
+                    </span>
+                    <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-slate-400">
+                      <Package className="w-3 h-3" />Хайрцагт
+                    </span>
                   </div>
-
                 </div>
-
               </div>
             </div>
           </div>
 
-          {/* --- BOTTOM: TABS & RELATED --- */}
+          {/* ── TABS ──────────────────────────────────────────────────────── */}
           <div className="mt-16 md:mt-24">
             <ProductInfoTabs product={product} />
           </div>
 
+          {/* ── RELATED ───────────────────────────────────────────────────── */}
           <div className="mt-16 md:mt-24">
-            <h2 className="font-sora items-center font-bold text-2xl md:text-3xl text-slate-900 mb-8 border-l-4 border-[#FF5000] pl-4">Төстэй бараа</h2>
+            <h2 className="font-sora font-bold text-2xl md:text-3xl text-slate-900 mb-8 border-l-4 border-[#FF5000] pl-4">
+              Төстэй бараа
+            </h2>
             <RelatedProducts products={product.relatedProducts || []} />
           </div>
-
         </div>
       </div>
 
-      {/* Lightbox */}
+      {/* ── Lightbox ──────────────────────────────────────────────────────── */}
       <AnimatePresence>
         {showLightbox && (
           <motion.div
@@ -732,27 +713,45 @@ export default function ProductDetailClient({ product }: { product: ProductDetai
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setShowLightbox(false)}
-            className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 cursor-zoom-out"
+            className="fixed inset-0 z-[200] bg-black/92 backdrop-blur-xl flex items-center justify-center p-4 cursor-zoom-out"
           >
-            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} className="relative w-full max-w-5xl aspect-square md:aspect-video rounded-3xl overflow-hidden">
+            <button
+              onClick={() => setShowLightbox(false)}
+              className="absolute top-5 right-5 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', damping: 24, stiffness: 280 }}
+              className="relative w-full max-w-5xl aspect-square md:aspect-video rounded-3xl overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
               <Image src={images[activeImageIndex]} alt="" fill className="object-contain" priority />
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Mobile Bottom CTA Layer */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-2xl border-t border-slate-100 p-4 pb-safe md:hidden shadow-[0_-20px_40px_rgba(0,0,0,0.05)]">
-        <div className="flex items-center gap-3">
-          <div className="flex-1 flex flex-col pl-2">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Нийт үнэ</span>
+      {/* ── Mobile bottom CTA ─────────────────────────────────────────────── */}
+      <div
+        className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
+        style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(24px)', borderTop: '1px solid rgba(0,0,0,0.06)' }}
+      >
+        <div className="flex items-center gap-3 px-4 pt-3 pb-safe pb-4">
+          <div className="flex-1 flex flex-col pl-1">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Нийт үнэ</span>
             <span className="font-sora font-bold text-xl text-[#FF5000] leading-none">{formatPrice(product.price * quantity)}</span>
           </div>
-          <motion.button whileTap={{ scale: 0.95 }} onClick={handleAddToCart} className="px-5 py-3.5 rounded-2xl bg-slate-100 text-slate-900 font-bold active:bg-slate-200">
+          <motion.button whileTap={{ scale: 0.95 }} onClick={handleAddToCart}
+            className="px-5 py-3.5 rounded-2xl bg-slate-100 text-slate-900 font-bold text-sm active:bg-slate-200">
             Сагслах
           </motion.button>
-          <motion.button whileTap={{ scale: 0.95 }} onClick={handleBuyNow} className="px-6 py-3.5 rounded-2xl bg-[#FF5000] text-white font-bold shadow-lg shadow-orange-500/25">
-            Авах
+          <motion.button whileTap={{ scale: 0.95 }} onClick={handleBuyNow}
+            className="px-6 py-3.5 rounded-2xl bg-[#FF5000] text-white font-bold text-sm shadow-lg shadow-orange-500/25">
+            Худалдан авах
           </motion.button>
         </div>
       </div>
@@ -760,7 +759,10 @@ export default function ProductDetailClient({ product }: { product: ProductDetai
   );
 }
 
-// --- TABS COMPONENT ---
+// ─────────────────────────────────────────────────────────────────────────────
+// TABS COMPONENT
+// ─────────────────────────────────────────────────────────────────────────────
+
 function ProductInfoTabs({ product }: { product: any }) {
   const tabs = [
     { id: 'description', label: 'Тайлбар' },
@@ -770,20 +772,21 @@ function ProductInfoTabs({ product }: { product: any }) {
   const [activeTab, setActiveTab] = useState('description');
 
   return (
-    <div className="bg-white rounded-[2.5rem] p-6 md:p-10 shadow-sm border border-slate-100 font-dm">
-      <div className="flex border-b border-gray-100">
+    <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm border border-slate-100 font-dm">
+      {/* Tab bar */}
+      <div className="flex border-b border-slate-100">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-5 py-4 text-sm font-bold relative transition-colors ${activeTab === tab.id ? 'text-[#FF5000]' : 'text-slate-400 hover:text-slate-700'
-              }`}
+            className={`px-5 py-4 text-sm font-bold relative transition-colors ${activeTab === tab.id ? 'text-[#FF5000]' : 'text-slate-400 hover:text-slate-700'}`}
           >
             {tab.label}
             {activeTab === tab.id && (
               <motion.div
                 layoutId="tabUnderline"
-                className="absolute bottom-0 left-4 right-4 h-1 bg-[#FF5000] rounded-t-full"
+                className="absolute bottom-0 left-4 right-4 h-[3px] bg-[#FF5000] rounded-t-full"
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
               />
             )}
           </button>
@@ -799,30 +802,35 @@ function ProductInfoTabs({ product }: { product: any }) {
           transition={{ duration: 0.2 }}
           className="mt-8"
         >
+          {/* Description */}
           {activeTab === 'description' && (
             <div className="prose prose-sm text-slate-600 max-w-none">
-              <p className="leading-relaxed font-medium text-base">{product.description || 'Дэлгэрэнгүй мэдээлэл ороогүй байна.'}</p>
+              <p className="leading-relaxed font-medium text-base">
+                {product.description || 'Дэлгэрэнгүй мэдээлэл ороогүй байна.'}
+              </p>
             </div>
           )}
 
+          {/* Specs */}
           {activeTab === 'specs' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+            <div className="divide-y divide-slate-50">
               {product.attributes && Object.keys(product.attributes).length > 0 ? (
                 Object.entries(product.attributes).map(([k, v], i) => (
-                  <div key={k} className={`flex py-3 border-b border-slate-50 ${i % 2 === 0 ? '' : ''}`}>
-                    <span className="w-1/3 font-bold text-slate-400 text-sm">{k}</span>
-                    <span className="w-2/3 font-bold text-slate-900 text-sm">{String(v)}</span>
+                  <div key={k} className={`flex py-3.5 ${i % 2 === 0 ? 'bg-slate-50/50 -mx-6 px-6' : ''}`}>
+                    <span className="w-2/5 font-bold text-slate-400 text-sm">{k}</span>
+                    <span className="w-3/5 font-bold text-slate-900 text-sm">{String(v)}</span>
                   </div>
                 ))
               ) : (
-                <p className="text-slate-400 font-medium italic">Үзүүлэлтийн мэдээлэл байхгүй байна.</p>
+                <p className="text-slate-400 font-medium italic py-4">Үзүүлэлтийн мэдээлэл байхгүй байна.</p>
               )}
             </div>
           )}
 
+          {/* Reviews */}
           {activeTab === 'reviews' && (
             <div className="flex flex-col lg:flex-row gap-12 py-4">
-              <div className="flex-shrink-0 text-center lg:text-left">
+              <div className="shrink-0 text-center lg:text-left">
                 <div className="font-sora font-black text-6xl text-slate-900 tracking-tighter leading-none mb-3">
                   {product.rating ? Number(product.rating).toFixed(1) : '0.0'}
                 </div>
@@ -837,21 +845,22 @@ function ProductInfoTabs({ product }: { product: any }) {
                   const widthPct = product.reviewCount ? Math.floor(Math.random() * 80 + 10) : 0;
                   return (
                     <div key={star} className="flex items-center gap-4">
-                      <span className="font-bold text-slate-600 w-3">{star}</span>
-                      <Star className="w-4 h-4 fill-slate-200 text-slate-200" />
-                      <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                      <span className="font-bold text-slate-600 w-3 text-sm">{star}</span>
+                      <Star className="w-4 h-4 fill-slate-200 text-slate-200 shrink-0" />
+                      <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${widthPct}%` }}
-                          transition={{ duration: 1, delay: idx * 0.08, ease: "easeOut" }}
+                          transition={{ duration: 0.9, delay: idx * 0.08, ease: 'easeOut' }}
                           className="h-full bg-amber-400 rounded-full"
                         />
                       </div>
+                      <span className="text-xs text-slate-400 w-8 text-right font-bold">{widthPct}%</span>
                     </div>
-                  )
+                  );
                 })}
                 <div className="pt-6">
-                  <button className="px-6 py-3 rounded-2xl bg-slate-900 text-white font-bold hover:bg-slate-800 transition-colors">
+                  <button className="px-6 py-3 rounded-2xl bg-slate-900 text-white font-bold hover:bg-slate-800 transition-colors text-sm">
                     Үнэлгээ бичих
                   </button>
                 </div>

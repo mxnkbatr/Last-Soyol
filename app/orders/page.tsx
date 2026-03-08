@@ -3,140 +3,195 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ChevronLeft } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { ChevronLeft, Package, Clock, Truck, CheckCircle2, XCircle, ShoppingBag } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import useSWR from 'swr';
+import { formatPrice } from '@/lib/utils';
 
 const TABS = ['Бүгд', 'Хүлээгдэж буй', 'Хүргэлтэнд', 'Дууссан'];
 
-const SAMPLE_ORDERS = [
-  {
-    id: 'ORD-1001',
-    shop: 'Soyol Official',
-    date: '2024.02.28',
-    status: 'Хүлээгдэж буй',
-    statusColor: 'bg-[#FF6B00]',
-    productName: 'Шинэ загварын цүнх',
-    price: 125000,
-    image: 'https://res.cloudinary.com/dc127wztz/image/upload/v1770896452/banner1_nw6nok.png',
-  },
-  {
-    id: 'ORD-1002',
-    shop: 'Электрон бараа',
-    date: '2024.02.25',
-    status: 'Хүргэлтэнд',
-    statusColor: 'bg-blue-500',
-    productName: 'Утасгүй чихэвч Pro',
-    price: 89000,
-    image: 'https://res.cloudinary.com/dc127wztz/image/upload/v1770896152/banner_qhjffv.png',
-  },
-  {
-    id: 'ORD-1003',
-    shop: 'Гоо сайхан',
-    date: '2024.02.20',
-    status: 'Дууссан',
-    statusColor: 'bg-green-500',
-    productName: 'Гүн чийгшүүлэгч тос',
-    price: 45000,
-    image: 'https://res.cloudinary.com/dc127wztz/image/upload/v1770896452/banner1_nw6nok.png',
-  }
-];
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any; bg: string }> = {
+  pending: { label: 'Хүлээгдэж буй', color: 'text-orange-600', bg: 'bg-orange-50', icon: Clock },
+  processing: { label: 'Боловсруулагдаж буй', color: 'text-blue-600', bg: 'bg-blue-50', icon: Package },
+  shipped: { label: 'Хүргэлтэнд', color: 'text-blue-600', bg: 'bg-blue-50', icon: Truck },
+  delivered: { label: 'Хүргэгдсэн', color: 'text-green-600', bg: 'bg-green-50', icon: CheckCircle2 },
+  cancelled: { label: 'Цуцлагдсан', color: 'text-red-600', bg: 'bg-red-50', icon: XCircle },
+};
 
 export default function MyOrdersPage() {
   const [activeTab, setActiveTab] = useState('Бүгд');
+  const { data, error, isLoading } = useSWR('/api/orders', fetcher);
 
-  const filteredOrders = activeTab === 'Бүгд'
-    ? SAMPLE_ORDERS
-    : SAMPLE_ORDERS.filter(o => o.status === activeTab);
+  const orders = data?.orders || [];
+
+  const filteredOrders = orders.filter((order: any) => {
+    if (activeTab === 'Бүгд') return true;
+    if (activeTab === 'Хүлээгдэж буй') return order.status === 'pending';
+    if (activeTab === 'Хүргэлтэнд') return order.status === 'processing' || order.status === 'shipped';
+    if (activeTab === 'Дууссан') return order.status === 'delivered' || order.status === 'cancelled';
+    return true;
+  });
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] font-sans pb-10">
+    <div className="min-h-screen bg-[#F8FAFC] font-sans pb-20">
       {/* Header */}
-      <div className="bg-white h-[56px] flex items-center px-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)] sticky top-0 z-50">
-        <Link href="/profile" className="p-2 -ml-2 text-[#1A1A1A]">
-          <ChevronLeft className="w-6 h-6" strokeWidth={2} />
+      <div className="bg-white/80 backdrop-blur-md h-14 flex items-center px-4 border-b border-slate-100 sticky top-0 z-50 lg:hidden" style={{ paddingTop: 'env(safe-area-inset-top)', height: 'calc(env(safe-area-inset-top) + 3.5rem)' }}>
+        <Link href="/profile" className="p-2 -ml-2 text-slate-900 active:scale-90 transition-transform">
+          <ChevronLeft className="w-6 h-6" strokeWidth={2.5} />
         </Link>
-        <h1 className="flex-1 text-center text-[16px] font-bold text-[#1A1A1A] pr-8">
+        <h1 className="flex-1 text-center text-[16px] font-black text-slate-900 pr-8">
           Миний захиалга
         </h1>
       </div>
 
-      {/* Tabs */}
-      <div className="bg-white px-4 border-b border-gray-100 flex overflow-x-auto scrollbar-hide">
-        {TABS.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`whitespace-nowrap px-4 py-3.5 text-[14px] font-bold relative transition-colors ${activeTab === tab ? 'text-[#FF6B00]' : 'text-[#999999]'
-              }`}
-          >
-            {tab}
-            {activeTab === tab && (
-              <motion.div
-                layoutId="orderTabIndicator"
-                className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#FF6B00] rounded-t-full"
-              />
-            )}
-          </button>
-        ))}
-      </div>
+      {/* Desktop Header Wrapper (for spacing) */}
+      <div className="hidden lg:block h-6" />
 
-      {/* Order List */}
-      <div className="pt-4 px-4 space-y-4">
-        {filteredOrders.length > 0 ? (
-          filteredOrders.map((order) => (
-            <div key={order.id} className="bg-white rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.06)] p-4">
-              {/* Top Row */}
-              <div className="flex justify-between items-center mb-3 pb-3 border-b border-gray-100">
-                <span className="text-[14px] font-bold text-[#1A1A1A]">{order.shop}</span>
-                <span className="text-[12px] font-medium text-[#999999]">{order.date}</span>
-              </div>
+      <div className="max-w-3xl mx-auto">
+        <div className="hidden lg:flex items-center gap-4 mb-8 px-4">
+          <Link href="/profile" className="p-3 bg-white rounded-2xl border border-slate-100 shadow-sm hover:border-[#FF5000] text-slate-400 hover:text-[#FF5000] transition-all">
+            <ChevronLeft className="w-5 h-5" strokeWidth={2.5} />
+          </Link>
+          <h1 className="text-3xl font-black text-slate-900">Миний захиалга</h1>
+        </div>
 
-              {/* Product Row */}
-              <div className="flex gap-3 mb-4">
-                <div className="w-[60px] h-[60px] rounded-[8px] bg-gray-50 overflow-hidden shrink-0 relative">
-                  <Image
-                    src={order.image}
-                    alt={order.productName}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-[14px] font-bold text-[#1A1A1A] leading-tight mb-1 truncate">
-                    {order.productName}
-                  </h3>
-                  <p className="text-[14px] text-[#999999] font-medium mb-1.5">
-                    {order.price.toLocaleString()}₮
-                  </p>
-                  <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold text-white uppercase tracking-wider ${order.statusColor}`}>
-                    {order.status}
-                  </span>
-                </div>
-              </div>
+        {/* Tabs */}
+        <div className="bg-white sticky top-[calc(env(safe-area-inset-top)+3.5rem)] lg:top-0 lg:static z-40 px-4 border-b border-slate-100 flex overflow-x-auto scrollbar-hide lg:rounded-2xl lg:mb-6 lg:border lg:shadow-sm">
+          {TABS.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`whitespace-nowrap px-5 py-4 text-[14px] font-bold relative transition-colors ${activeTab === tab ? 'text-[#FF5000]' : 'text-slate-400 hover:text-slate-600'
+                }`}
+            >
+              {tab}
+              {activeTab === tab && (
+                <motion.div
+                  layoutId="orderTabIndicator"
+                  className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#FF5000] rounded-t-full"
+                />
+              )}
+            </button>
+          ))}
+        </div>
 
-              {/* Bottom Row */}
-              <div className="flex justify-between items-center pt-3 border-t border-gray-100">
-                <div className="flex flex-col">
-                  <span className="text-[11px] font-medium text-[#999999] uppercase">Нийт дүн</span>
-                  <span className="text-[16px] font-black text-[#FF6B00]">
-                    {order.price.toLocaleString()}₮
-                  </span>
+        {/* Order List */}
+        <div className="pt-4 px-4 space-y-4">
+          {isLoading ? (
+            // Skeleton Loading
+            [...Array(3)].map((_, i) => (
+              <div key={i} className="bg-white rounded-3xl border border-slate-100 p-5 space-y-4 animate-pulse shadow-sm">
+                <div className="flex justify-between items-center pb-4 border-b border-slate-50">
+                  <div className="h-4 bg-slate-100 rounded w-24" />
+                  <div className="h-3 bg-slate-100 rounded w-16" />
                 </div>
-                <button className="px-4 py-2 rounded-full border border-[#FF6B00] text-[#FF6B00] text-[13px] font-bold hover:bg-orange-50 transition-colors">
-                  Дахин захиалах
-                </button>
+                <div className="flex gap-4">
+                  <div className="w-16 h-16 bg-slate-100 rounded-2xl" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-slate-100 rounded w-3/4" />
+                    <div className="h-3 bg-slate-100 rounded w-1/4" />
+                  </div>
+                </div>
+                <div className="h-10 bg-slate-100 rounded-2xl" />
               </div>
-            </div>
-          ))
-        ) : (
-          <div className="py-20 flex flex-col items-center justify-center text-center">
-            <div className="w-[80px] h-[80px] rounded-full bg-gray-100 flex items-center justify-center mb-4">
-              <span className="text-3xl grayscale opacity-40">📦</span>
-            </div>
-            <h3 className="text-[16px] font-bold text-[#1A1A1A] mb-1">Захиалга байхгүй байна</h3>
-            <p className="text-[14px] text-[#999999]">Та одоогоор ямар нэгэн захиалга хийгээгүй байна.</p>
-          </div>
-        )}
+            ))
+          ) : filteredOrders.length > 0 ? (
+            <AnimatePresence mode="popLayout">
+              {filteredOrders.map((order: any) => {
+                const status = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
+                const Icon = status.icon;
+                const firstItem = order.items?.[0] || {};
+                const remainingItems = (order.items?.length || 1) - 1;
+
+                return (
+                  <motion.div
+                    layout
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    key={order._id}
+                    className="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-shadow group"
+                  >
+                    {/* Top Row */}
+                    <div className="flex justify-between items-center mb-4 pb-4 border-b border-slate-50">
+                      <div className="flex flex-col">
+                        <span className="text-[14px] font-black text-slate-900 group-hover:text-[#FF5000] transition-colors">#{order._id.slice(-6).toUpperCase()}</span>
+                        <span className="text-[11px] font-bold text-slate-400">{new Date(order.createdAt).toLocaleDateString('.')}</span>
+                      </div>
+                      <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full ${status.bg} ${status.color}`}>
+                        <Icon className="w-3.5 h-3.5" strokeWidth={2.5} />
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider">
+                          {status.label}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Product Row */}
+                    <Link href={`/orders/${order._id}`} className="flex gap-4 mb-5">
+                      <div className="w-16 h-16 rounded-2xl bg-slate-50 overflow-hidden shrink-0 relative border border-slate-100 group-hover:border-[#FF5000]/20 transition-colors">
+                        <Image
+                          src={firstItem.image || 'https://res.cloudinary.com/dc127wztz/image/upload/v1770896452/banner1_nw6nok.png'}
+                          alt={firstItem.name || 'Product'}
+                          fill
+                          className="object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0 flex flex-col justify-center">
+                        <h3 className="text-[15px] font-bold text-slate-900 leading-snug mb-1 group-hover:text-[#FF5000] transition-colors">
+                          {firstItem.name || 'Манай бүтээгдэхүүн'}
+                          {remainingItems > 0 && <span className="text-slate-400 font-medium text-xs ml-1">гэх мэт {remainingItems + 1} бараа</span>}
+                        </h3>
+                        <p className="text-[14px] text-slate-500 font-bold">
+                          {formatPrice(order.total || firstItem.price || 0)}
+                        </p>
+                      </div>
+                    </Link>
+
+                    {/* Bottom Row */}
+                    <div className="flex justify-between items-center pt-4 border-t border-slate-50">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Нийт дүн</span>
+                        <span className="text-[18px] font-black text-[#FF5000]">
+                          {formatPrice(order.total || 0)}
+                        </span>
+                      </div>
+                      <Link
+                        href={`/orders/${order._id}`}
+                        className="px-6 py-2.5 rounded-2xl bg-slate-50 text-slate-900 text-[13px] font-black hover:bg-[#FF5000] hover:text-white transition-all active:scale-95 shadow-sm border border-slate-100"
+                      >
+                        Дэлгэрэнгүй
+                      </Link>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          ) : (
+            // Empty State
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="py-20 flex flex-col items-center justify-center text-center"
+            >
+              <div className="w-24 h-24 rounded-[40px] bg-slate-50 flex items-center justify-center mb-6 relative">
+                <div className="absolute inset-0 bg-orange-100/50 rounded-[40px] animate-pulse" />
+                <ShoppingBag className="w-10 h-10 text-slate-300 relative z-10" strokeWidth={1.5} />
+              </div>
+              <h3 className="text-xl font-black text-slate-900 mb-2">Захиалга байхгүй байна</h3>
+              <p className="text-[14px] text-slate-500 max-w-[240px] mb-8 font-medium italic">
+                Та одоогоор ямар нэгэн захиалга хийгээгүй байна.
+              </p>
+              <Link
+                href="/"
+                className="px-8 py-3.5 bg-[#FF5000] text-white rounded-2xl font-black text-sm shadow-xl shadow-orange-500/30 hover:shadow-orange-500/50 transition-all active:scale-95"
+              >
+                Дэлгүүр хэсэх
+              </Link>
+            </motion.div>
+          )}
+        </div>
       </div>
     </div>
   );
