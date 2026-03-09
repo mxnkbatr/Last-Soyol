@@ -40,6 +40,7 @@ function SearchContent() {
   const [categories, setCategories] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [trendingTags, setTrendingTags] = useState<{ text: string, status: string }[]>([]);
   const addItem = useCartStore((state) => state.addItem);
 
   useEffect(() => {
@@ -64,6 +65,14 @@ function SearchContent() {
     fetch('/api/products?limit=8')
       .then(res => res.json())
       .then(data => setRecommended(data.products || []))
+      .catch(() => { });
+
+    // Fetch dynamic trending tags
+    fetch('/api/search/trending')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.trending) setTrendingTags(data.trending);
+      })
       .catch(() => { });
   }, []);
 
@@ -106,14 +115,6 @@ function SearchContent() {
     });
   };
 
-  const trendingTags = [
-    { text: 'iPhone 15 Pro', status: 'HOT' },
-    { text: 'AirPods Max', status: 'NEW' },
-    { text: 'Gaming Setup', status: 'HOT' },
-    { text: 'Skin Care', status: 'TREND' },
-    { text: 'Winter Sale', status: 'HOT' },
-  ];
-
   // The unused legacy static categories list has been removed
 
   if (!q.trim()) {
@@ -135,13 +136,22 @@ function SearchContent() {
               <TrendingUp className="w-3.5 h-3.5 text-orange-500" />
               <span className="text-xs font-bold text-gray-700">Эрэлттэй</span>
             </div>
-            {trendingTags.map((tag, idx) => (
-              <div key={idx} className="flex items-center gap-2 shrink-0 bg-white/70 backdrop-blur-md px-4 py-1.5 rounded-full border border-gray-100/50 shadow-sm transition-all active:scale-95">
+            {trendingTags.length > 0 ? trendingTags.map((tag, idx) => (
+              <div
+                key={idx}
+                onClick={() => router.push(`/search?q=${encodeURIComponent(tag.text)}`)}
+                className="cursor-pointer flex items-center gap-2 shrink-0 bg-white/70 backdrop-blur-md px-4 py-1.5 rounded-full border border-gray-100/50 shadow-sm transition-all active:scale-95 hover:bg-gray-50"
+              >
                 <span className="text-xs font-medium text-gray-600">{tag.text}</span>
                 {tag.status === 'HOT' && <Flame className="w-3 h-3 text-red-500 fill-red-500" />}
                 {tag.status === 'NEW' && <Sparkles className="w-3 h-3 text-blue-500 fill-blue-500" />}
               </div>
-            ))}
+            )) : (
+              <div className="flex items-center gap-2">
+                <div className="w-20 h-8 bg-gray-100 animate-pulse rounded-full" />
+                <div className="w-24 h-8 bg-gray-100 animate-pulse rounded-full" />
+              </div>
+            )}
           </div>
         </div>
 

@@ -1,14 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Edit2, Save, X, MoveUp, MoveDown, Image as ImageIcon } from 'lucide-react';
+import { Plus, Trash2, Edit2, Save, X, MoveUp, MoveDown, Image as ImageIcon, UploadCloud, GripVertical } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { CldUploadWidget } from 'next-cloudinary';
+import { Reorder } from 'framer-motion';
 import { Banner } from '@/models/Banner';
 
 export default function BannerAdminPage() {
     const [banners, setBanners] = useState<Banner[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
+    const [editingBannerId, setEditingBannerId] = useState<string | null>(null);
+    const [editBannerData, setEditBannerData] = useState<Partial<Banner>>({});
+    const [isSavingOrder, setIsSavingOrder] = useState(false);
     const [newBanner, setNewBanner] = useState<Partial<Banner>>({
         image: '',
         title: '',
@@ -74,6 +79,60 @@ export default function BannerAdminPage() {
         }
     };
 
+    const handleToggleActive = async (banner: Banner) => {
+        try {
+            const res = await fetch(`/api/banners/${banner.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ active: !banner.active }),
+            });
+            if (res.ok) fetchBanners();
+        } catch (err) {
+            toast.error('Алдаа гарлаа');
+        }
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editingBannerId) return;
+        try {
+            const res = await fetch(`/api/banners/${editingBannerId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(editBannerData),
+            });
+            if (res.ok) {
+                toast.success('Амжилттай хадгаллаа');
+                setEditingBannerId(null);
+                fetchBanners();
+            }
+        } catch (err) {
+            toast.error('Алдаа гарлаа');
+        }
+    };
+
+    const handleReorder = async (reorderedBanners: Banner[]) => {
+        setBanners(reorderedBanners);
+    };
+
+    const saveNewOrder = async () => {
+        setIsSavingOrder(true);
+        try {
+            // Sequential updates for simplicity. A bulk update endpoint is preferred for production.
+            await Promise.all(banners.map((b, idx) =>
+                fetch(`/api/banners/${b.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order: idx }),
+                })
+            ));
+            toast.success('Дараалал хадгалагдлаа');
+        } catch (err) {
+            toast.error('Дараалал хадгалж чадсангүй');
+        } finally {
+            setIsSavingOrder(false);
+        }
+    };
+
     return (
         <div className="p-8 max-w-6xl mx-auto">
             <div className="flex justify-between items-center mb-8">
@@ -101,14 +160,34 @@ export default function BannerAdminPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Зургийн URL</label>
-                                <input
-                                    type="text"
-                                    value={newBanner.image}
-                                    onChange={(e) => setNewBanner({ ...newBanner, image: e.target.value })}
-                                    placeholder="https://..."
-                                    className="w-full px-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
-                                />
+                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Зураг оруулах <span className="text-red-500">*</span></label>
+                                <CldUploadWidget
+                                    uploadPreset="ml_default" // Use your Cloudinary upload preset name here
+                                    onSuccess={(result) => {
+                                        if (typeof result.info === 'object' && 'secure_url' in result.info) {
+                                            setNewBanner({ ...newBanner, image: result.info.secure_url });
+                                        }
+                                    }}
+                                >
+                                    {({ open }) => (
+                                        <div
+                                            onClick={() => open()}
+                                            className="w-full flex items-center justify-center gap-3 px-4 py-3.5 bg-gray-50 border-2 border-dashed border-gray-200 hover:border-orange-400 hover:bg-orange-50 cursor-pointer rounded-xl transition-all"
+                                        >
+                                            {newBanner.image ? (
+                                                <div className="flex items-center gap-3 w-full">
+                                                    <img src={newBanner.image} alt="Preview" className="w-12 h-12 object-cover rounded-lg border border-gray-200" />
+                                                    <span className="text-sm font-medium text-gray-700 truncate">{newBanner.image}</span>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <UploadCloud className="w-5 h-5 text-gray-400" />
+                                                    <span className="text-sm font-medium text-gray-500">Зураг сонгох (Cloudinary)</span>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
+                                </CldUploadWidget>
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Гарчиг (Заавал биш)</label>
@@ -144,49 +223,105 @@ export default function BannerAdminPage() {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {banners.map((banner, index) => (
-                    <div key={banner.id} className="group relative bg-white rounded-[32px] overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300">
-                        <div className="aspect-[21/9] relative bg-gray-100">
-                            {banner.image ? (
-                                <img src={banner.image} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                    <ImageIcon className="w-10 h-10" />
-                                </div>
-                            )}
-                            <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
-                                <button
-                                    onClick={() => handleDelete(banner.id)}
-                                    className="p-2 bg-white/90 backdrop-blur-md text-red-500 rounded-xl shadow-lg hover:bg-red-50"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
-                        <div className="p-6">
-                            <div className="flex justify-between items-start mb-2">
-                                <h3 className="font-bold text-gray-900 truncate pr-4">{banner.title || 'Гарчиггүй'}</h3>
-                                <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${banner.active ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
-                                    {banner.active ? 'Идэвхтэй' : 'Идэвхгүй'}
-                                </span>
-                            </div>
-                            <p className="text-xs text-gray-400 truncate font-medium">{banner.image}</p>
-                            <div className="mt-4 flex items-center gap-3 pt-4 border-t border-gray-50">
-                                <div className="flex-1 flex items-center gap-1">
-                                    <span className="text-xs font-bold text-gray-300">Дараалал: {banner.order}</span>
-                                </div>
-                                <button className="text-xs font-black text-orange-500 uppercase tracking-widest hover:underline">
-                                    Засах
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                ))}
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Одоогийн беннерүүд</h2>
+                {banners.length > 0 && (
+                    <button
+                        onClick={saveNewOrder}
+                        disabled={isSavingOrder}
+                        className="text-sm font-bold text-orange-600 hover:text-white hover:bg-orange-500 px-4 py-2 rounded-lg border border-orange-200 hover:border-orange-500 transition-all disabled:opacity-50"
+                    >
+                        {isSavingOrder ? 'Хадгалж байна...' : 'Дараалал хадгалах'}
+                    </button>
+                )}
             </div>
 
+            {banners.length > 0 ? (
+                <Reorder.Group axis="y" values={banners} onReorder={handleReorder} className="space-y-4">
+                    {banners.map((banner) => (
+                        <Reorder.Item key={banner.id} value={banner} className="relative bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center p-3 gap-4 group hover:shadow-md transition-shadow">
+
+                            <div className="cursor-grab active:cursor-grabbing p-2 text-gray-400 hover:text-gray-600">
+                                <GripVertical className="w-5 h-5" />
+                            </div>
+
+                            <div className="w-32 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 relative">
+                                {banner.image ? (
+                                    <img src={banner.image} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                        <ImageIcon className="w-6 h-6" />
+                                    </div>
+                                )}
+                            </div>
+
+                            {editingBannerId === banner.id ? (
+                                <div className="flex-1 grid grid-cols-2 gap-3 mr-4">
+                                    <input
+                                        type="text"
+                                        value={editBannerData.title || ''}
+                                        onChange={(e) => setEditBannerData({ ...editBannerData, title: e.target.value })}
+                                        placeholder="Гарчиг"
+                                        className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
+                                    />
+                                    <input
+                                        type="text"
+                                        value={editBannerData.link || ''}
+                                        onChange={(e) => setEditBannerData({ ...editBannerData, link: e.target.value })}
+                                        placeholder="Холбоос"
+                                        className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="font-bold text-gray-900 truncate">{banner.title || 'Гарчиггүй'}</h3>
+                                    <p className="text-xs text-gray-500 truncate mt-0.5">{banner.link || 'Холбоосгүй'}</p>
+                                </div>
+                            )}
+
+                            <div className="flex items-center gap-3">
+                                {editingBannerId === banner.id ? (
+                                    <>
+                                        <button onClick={handleSaveEdit} className="p-2 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg">
+                                            <Save className="w-4 h-4" />
+                                        </button>
+                                        <button onClick={() => setEditingBannerId(null)} className="p-2 bg-gray-50 text-gray-600 hover:bg-gray-100 rounded-lg">
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <button
+                                            onClick={() => handleToggleActive(banner)}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${banner.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                                        >
+                                            {banner.active ? 'Идэвхтэй' : 'Идэвхгүй'}
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setEditingBannerId(banner.id);
+                                                setEditBannerData(banner);
+                                            }}
+                                            className="p-2 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"
+                                        >
+                                            <Edit2 className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(banner.id)}
+                                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </Reorder.Item>
+                    ))}
+                </Reorder.Group>
+            ) : null}
+
             {banners.length === 0 && !isLoading && (
-                <div className="text-center py-20 bg-gray-50 rounded-[40px] border-2 border-dashed border-gray-200">
+                <div className="text-center py-20 bg-gray-50 rounded-[32px] border-2 border-dashed border-gray-200">
                     <ImageIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                     <p className="text-gray-400 font-bold">Беннер байхгүй байна</p>
                 </div>

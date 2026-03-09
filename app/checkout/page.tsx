@@ -254,7 +254,7 @@ export default function CheckoutPage() {
           <p className="text-sm sm:text-base text-gray-600">Хүргэлтийн мэдээллээ оруулна уу</p>
         </motion.div>
 
-        <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-6 sm:gap-8 pb-24 lg:pb-0">
+        <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-6 sm:gap-8 pb-[160px] lg:pb-0">
           <div className="lg:col-span-2 space-y-6">
             {/* Delivery Method Toggle */}
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
