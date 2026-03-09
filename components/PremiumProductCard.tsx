@@ -8,6 +8,7 @@ import { useWishlistStore } from '@/store/wishlistStore';
 import toast from 'react-hot-toast';
 import { useLanguage } from '@/context/LanguageContext';
 import { useTranslation } from '@/hooks/useTranslation';
+import ProductBadge from '@/components/ProductBadge';
 
 interface Product {
     id: string;
@@ -66,7 +67,13 @@ export default function PremiumProductCard({ product, isFeatured = false }: { pr
                     {/* Image Section */}
                     <div className="relative aspect-square overflow-hidden bg-gray-50/50">
                         {/* Badges */}
-                        <div className="absolute top-3 left-3 z-10 flex flex-col gap-2">
+                        <div className="absolute top-3 left-3 z-10 flex flex-col gap-2 items-start">
+                            <ProductBadge
+                                rating={product.rating}
+                                sections={product.sections}
+                                isFeatured={isFeatured}
+                                className="static"
+                            />
                             {product.discountPercent && product.discountPercent > 0 && (
                                 <div className="px-2.5 py-1 bg-[#FF3B30] rounded-lg flex items-center shadow-lg shadow-red-500/20">
                                     <span className="text-[10px] sm:text-[11px] font-black text-white">
@@ -74,15 +81,9 @@ export default function PremiumProductCard({ product, isFeatured = false }: { pr
                                     </span>
                                 </div>
                             )}
-                            {isFeatured ? (
-                                <div className="px-2.5 py-1 bg-white/80 backdrop-blur-md border border-white/20 rounded-full flex items-center shadow-sm">
-                                    <span className="text-[9px] sm:text-[10px] font-extrabold tracking-widest text-slate-900 uppercase">
-                                        🔥 TOP
-                                    </span>
-                                </div>
-                            ) : (
-                                <div className="px-2.5 py-1 bg-orange-50/90 backdrop-blur-sm border border-orange-100 rounded-full flex items-center shadow-sm">
-                                    <span className="text-[9px] sm:text-[10px] font-extrabold tracking-widest text-orange-600 uppercase">
+                            {!isFeatured && (!product.rating || product.rating < 4.5) && (!product.sections || !product.sections.includes('Шинэ')) && (
+                                <div className="px-2.5 py-1 bg-gray-900/80 backdrop-blur-sm border border-gray-700/50 rounded-full flex items-center shadow-sm">
+                                    <span className="text-[9px] sm:text-[10px] font-extrabold tracking-widest text-white uppercase">
                                         {product.category}
                                     </span>
                                 </div>

@@ -9,6 +9,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { formatCurrency } from '@/lib/utils';
 import { useCartStore } from '@/store/cartStore';
 import toast from 'react-hot-toast';
+import ProductBadge from '@/components/ProductBadge';
 
 interface MobileProductCardProps {
     product: Product;
@@ -41,7 +42,12 @@ export default function MobileProductCard({ product }: MobileProductCardProps) {
                     />
 
                     {/* Premium Status & Discount Badges */}
-                    <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
+                    <div className="absolute top-2 left-2 z-10 flex flex-col gap-1.5 items-start">
+                        <ProductBadge
+                            rating={product.rating}
+                            sections={product.sections}
+                            className="static scale-90 origin-top-left"
+                        />
                         {product.discountPercent && product.discountPercent > 0 && (
                             <div className="px-2 py-1 bg-[#FF3B30] rounded-lg shadow-lg shadow-red-500/20">
                                 <span className="text-[10px] font-black text-white">-{product.discountPercent}%</span>

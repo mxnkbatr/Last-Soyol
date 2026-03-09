@@ -4,11 +4,12 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingCart, Heart, Eye, Package, Clock, TrendingUp, Zap, Sparkles } from 'lucide-react';
+import { Heart, Eye, Package, Clock, TrendingUp, Zap, Sparkles, Star } from 'lucide-react';
 import { formatPrice, formatCurrency } from '@/lib/utils';
 import { useCartStore } from '@/store/cartStore';
 import toast from 'react-hot-toast';
 import type { Product } from '@/models/Product';
+import ProductBadge from '@/components/ProductBadge';
 
 import { useAuth } from '@/context/AuthContext';
 
@@ -110,12 +111,13 @@ export default function DiscoveryProductCard({ product, index = 0, showTrendingB
         </AnimatePresence>
 
         {/* Status Badges - Minimalist Pill Design (Top Left) */}
-        <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5 pointer-events-none">
-          {showTrendingBadge && (
-            <div className="px-2 py-1 bg-white/90 backdrop-blur-sm text-orange-600 rounded-full flex items-center gap-1 border border-white/50 shadow-sm pointer-events-auto">
-              <span className="text-[10px] font-bold leading-none">TOP</span>
-            </div>
-          )}
+        <div className="absolute top-2 left-2 z-10 flex flex-col gap-1.5 pointer-events-none">
+          <ProductBadge
+            rating={product.rating}
+            sections={product.sections}
+            showTrendingBadge={showTrendingBadge}
+            className="static shadow-sm scale-95 origin-top-left"
+          />
           {product.stockStatus === 'in-stock' && (
             <div className="px-2 py-1 bg-white/90 backdrop-blur-sm text-emerald-700 rounded-full flex items-center gap-1 border border-white/50 shadow-sm pointer-events-auto">
               <span className="text-[10px] font-bold leading-none">БЭЛЭН</span>
@@ -158,7 +160,7 @@ export default function DiscoveryProductCard({ product, index = 0, showTrendingB
               {formatPrice(product.price)}
             </p>
             <div className="flex items-center gap-1">
-              <Star className="w-2.5 h-2.5 fill-yellow-400 text-yellow-400" />
+              <StarIcon className="w-2.5 h-2.5 fill-yellow-400 text-yellow-400" />
               <span className="text-[10px] font-bold text-slate-400">{product.rating || 0}</span>
             </div>
           </div>
@@ -182,9 +184,9 @@ export default function DiscoveryProductCard({ product, index = 0, showTrendingB
             onClick={handleQuickAdd}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            className="w-8 h-8 bg-[#FF5000] text-white rounded-full flex items-center justify-center shadow-lg shadow-orange-500/20 hover:bg-[#E64500] transition-all"
+            className="w-8 h-8 md:w-9 md:h-9 bg-[#FF5000] text-white rounded-full flex items-center justify-center shadow-lg shadow-orange-500/20 hover:bg-[#E64500] transition-all"
           >
-            <ShoppingCart className="w-4 h-4" strokeWidth={2.5} />
+            <ShoppingCartIcon className="w-4 h-4" strokeWidth={2.5} />
           </motion.button>
         </div>
       </div>
@@ -224,9 +226,15 @@ export default function DiscoveryProductCard({ product, index = 0, showTrendingB
   );
 }
 
-// Minimal Star Icon
-const Star = ({ className }: { className?: string }) => (
+// Minimal Icons
+const StarIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 20 20">
     <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+  </svg>
+);
+
+const ShoppingCartIcon = ({ className, strokeWidth }: { className?: string, strokeWidth?: number }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth || 2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17M9 21a2 2 0 100-4 2 2 0 000 4zm8 0a2 2 0 100-4 2 2 0 000 4z" />
   </svg>
 );
