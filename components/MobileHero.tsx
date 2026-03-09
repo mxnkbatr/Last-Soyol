@@ -4,12 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const banners = [
-    'https://res.cloudinary.com/dc127wztz/image/upload/w_1000,c_scale,q_auto,f_auto/v1770896452/banner1_nw6nok.png',
-    'https://res.cloudinary.com/dc127wztz/image/upload/w_1000,c_scale,q_auto,f_auto/v1770896152/banner_qhjffv.png',
-];
+import { Banner } from '@/models/Banner';
 
 export default function MobileHero() {
+    const [banners, setBanners] = useState<Banner[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
 
     const nextSlide = useCallback(() => {
@@ -17,9 +16,24 @@ export default function MobileHero() {
     }, []);
 
     useEffect(() => {
+        fetch('/api/banners')
+            .then(res => res.json())
+            .then(data => setBanners(data.banners || []))
+            .catch(err => console.error('Error fetching banners:', err))
+            .finally(() => setIsLoading(false));
+    }, []);
+
+    useEffect(() => {
+        if (banners.length <= 1) return;
         const interval = setInterval(nextSlide, 5000);
         return () => clearInterval(interval);
-    }, [nextSlide]);
+    }, [nextSlide, banners.length]);
+
+    if (isLoading || banners.length === 0) {
+        return (
+            <div className="mx-4 mt-4 relative rounded-2xl overflow-hidden bg-slate-100 animate-pulse aspect-[16/9]" />
+        );
+    }
 
     return (
         <section className="relative w-full bg-white lg:hidden mb-6 mt-4">
@@ -36,8 +50,8 @@ export default function MobileHero() {
                             className="absolute inset-0 w-full h-full"
                         >
                             <Image
-                                src={banners[currentIndex]}
-                                alt={`Banner ${currentIndex + 1}`}
+                                src={banners[currentIndex].image}
+                                alt={banners[currentIndex].title || `Banner ${currentIndex + 1}`}
                                 fill
                                 priority
                                 className="object-cover"

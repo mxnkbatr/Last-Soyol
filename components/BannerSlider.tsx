@@ -5,12 +5,11 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const banners = [
-  'https://res.cloudinary.com/dc127wztz/image/upload/w_1000,c_scale,q_auto,f_auto/v1770896452/banner1_nw6nok.png',
-  'https://res.cloudinary.com/dc127wztz/image/upload/w_1000,c_scale,q_auto,f_auto/v1770896152/banner_qhjffv.png',
-];
+import { Banner } from '@/models/Banner';
 
 export default function BannerSlider() {
+  const [banners, setBanners] = useState<Banner[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0); // -1 for left, 1 for right
   const [isHovered, setIsHovered] = useState(false);
@@ -26,10 +25,18 @@ export default function BannerSlider() {
   }, []);
 
   useEffect(() => {
-    if (isHovered) return;
+    fetch('/api/banners')
+      .then(res => res.json())
+      .then(data => setBanners(data.banners || []))
+      .catch(err => console.error('Error fetching banners:', err))
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (isHovered || banners.length <= 1) return;
     const interval = setInterval(nextSlide, 5000);
     return () => clearInterval(interval);
-  }, [nextSlide, isHovered]);
+  }, [nextSlide, isHovered, banners.length]);
 
   const variants = {
     enter: (direction: number) => ({
@@ -53,6 +60,12 @@ export default function BannerSlider() {
       filter: 'blur(10px)',
     }),
   };
+
+  if (isLoading || banners.length === 0) {
+    return (
+      <div className="w-full max-w-[1600px] mx-auto rounded-[2rem] bg-gray-100 animate-pulse aspect-[21/9] sm:aspect-[21/7] lg:aspect-[21/6]" />
+    );
+  }
 
   return (
     <section
@@ -90,8 +103,8 @@ export default function BannerSlider() {
             }}
           >
             <Image
-              src={banners[currentIndex]}
-              alt={`Banner ${currentIndex + 1}`}
+              src={banners[currentIndex].image}
+              alt={banners[currentIndex].title || `Banner ${currentIndex + 1}`}
               fill
               priority
               className="object-cover"
