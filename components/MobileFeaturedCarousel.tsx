@@ -9,8 +9,6 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import toast from 'react-hot-toast';
 import { useEffect, useState, useRef, useMemo } from 'react';
-import ProductBadge from '@/components/ProductBadge';
-
 interface Product {
     id: string;
     _id?: string;
@@ -35,7 +33,7 @@ export default function MobileFeaturedCarousel({ products }: MobileFeaturedCarou
 
     // Prepare loop items with memoization to prevent re-renders
     const loopItems = useMemo(() => {
-        const featured = products.filter((p) => p.featured || (p.rating && p.rating >= 4.5));
+        const featured = products.filter((p) => p.featured);
         if (featured.length === 0) return [];
 
         // Ensure we have enough items to fill a reasonable width before duplication
@@ -201,16 +199,14 @@ export default function MobileFeaturedCarousel({ products }: MobileFeaturedCarou
                                         alt={product.name}
                                         fill
                                         className="object-contain group-hover:scale-105 transition-transform duration-500 p-4"
+                                        sizes="200px"
                                         draggable={false}
                                     />
 
-                                    {/* Product Badge */}
-                                    <ProductBadge
-                                        rating={product.rating}
-                                        sections={[]}
-                                        isFeatured={product.featured}
-                                        className="static absolute top-2 right-2 scale-[0.75] origin-top-right"
-                                    />
+                                    {/* 🔥 TOP Badge - Top Right */}
+                                    <div className="absolute top-3 right-3 z-10 bg-white/80 backdrop-blur-md text-slate-900 text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1 border border-white/20">
+                                        🔥 TOP
+                                    </div>
 
                                     {/* Stock Badge - Left */}
                                     {product.inventory !== undefined && product.inventory < 10 && (
