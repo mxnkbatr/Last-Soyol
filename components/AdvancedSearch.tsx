@@ -25,11 +25,11 @@ interface AdvancedSearchProps {
 function AdvancedSearchContent({ onSearch }: AdvancedSearchProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   // Search state
   const [query, setQuery] = useState(searchParams.get('q') || '');
   const [showFilters, setShowFilters] = useState(false);
-  
+
   // Filter state
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>(searchParams.get('category') || '');
@@ -58,7 +58,7 @@ function AdvancedSearchContent({ onSearch }: AdvancedSearchProps) {
   // Build search URL
   const buildSearchURL = useCallback(() => {
     const params = new URLSearchParams();
-    
+
     if (query) params.set('q', query);
     if (selectedCategory) params.set('category', selectedCategory);
     if (priceRange.min > 0) params.set('minPrice', priceRange.min.toString());
@@ -94,7 +94,7 @@ function AdvancedSearchContent({ onSearch }: AdvancedSearchProps) {
   };
 
   // Active filters count
-  const activeFiltersCount = 
+  const activeFiltersCount =
     (selectedCategory ? 1 : 0) +
     (priceRange.min > 0 || priceRange.max < 10000000 ? 1 : 0) +
     (rating > 0 ? 1 : 0) +

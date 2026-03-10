@@ -46,7 +46,7 @@ export default function MobileProductCard({ product }: MobileProductCardProps) {
                         <ProductBadge
                             sections={product.sections}
                             isFeatured={product.featured}
-                            className="static scale-90 origin-top-left"
+                            className="z-10 scale-90 origin-top-left"
                         />
                         {product.discountPercent && product.discountPercent > 0 && (
                             <div className="px-2 py-1 bg-[#FF3B30] rounded-lg shadow-lg shadow-red-500/20">

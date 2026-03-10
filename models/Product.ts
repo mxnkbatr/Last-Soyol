@@ -17,6 +17,7 @@ export interface Product {
   inventory?: number;
   sections?: string[]; // ['Шинэ', 'Бэлэн', etc.]
   attributes?: Record<string, string>;
+  rating?: number;
   createdAt?: string | Date;
   updatedAt?: string | Date;
 }

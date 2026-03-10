@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { Banner } from '@/models/Banner';
@@ -46,7 +46,7 @@ export default function BannerSlider() {
     return () => clearInterval(interval);
   }, [nextSlide, isHovered, banners.length]);
 
-  const variants = {
+  const variants: Variants = {
     enter: (_direction: number) => ({
       opacity: 0,
     }),
@@ -121,7 +121,7 @@ export default function BannerSlider() {
 
       {/* Indicators */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex gap-3">
-        {banners.map((_, index) => (
+        {banners.map((_: Banner, index: number) => (
           <button
             key={index}
             onClick={() => {

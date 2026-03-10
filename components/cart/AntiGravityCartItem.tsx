@@ -57,12 +57,9 @@ export default function AntiGravityCartItem({ item }: AntiGravityCartItemProps) 
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={removing ? { opacity: 0, x: -100, scale: 0.8 } : { opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, x: -50 }}
-            whileHover={{ y: -4 }}
-            className={`relative mb-4 overflow-hidden rounded-[28px] border transition-all duration-500 ${item.selected
-                ? isPreOrder
-                    ? 'bg-purple-50/10 border-purple-200 shadow-[0_12px_30px_rgba(168,85,247,0.08)]'
-                    : 'bg-white border-blue-200 shadow-[0_12px_30px_rgba(0,106,255,0.08)]'
-                : 'bg-white/40 backdrop-blur-md border-white/20 shadow-sm'
+            className={`relative mb-3 overflow-hidden rounded-[24px] border transition-all duration-500 ${item.selected
+                ? 'bg-white border-orange-200 shadow-[0_12px_30px_rgba(255,80,0,0.06)]'
+                : 'bg-white border-gray-100 shadow-sm'
                 }`}
         >
             {/* Баруун талд улаан trash icon (mobile only) */}
@@ -91,89 +88,69 @@ export default function AntiGravityCartItem({ item }: AntiGravityCartItemProps) 
                 }}
                 className="relative z-10 flex items-center p-4 gap-4 bg-transparent border-transparent"
             >
-                {/* Selection Checkbox - Anti-gravity style */}
+                {/* Selection Checkbox */}
                 <button
                     onClick={() => toggleItemSelection(item.id)}
                     className={`shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${item.selected
-                        ? isPreOrder ? 'bg-purple-600 border-purple-600 shadow-lg shadow-purple-500/30' : 'bg-[#FF5000] border-[#FF5000] shadow-lg shadow-orange-500/30'
-                        : 'border-slate-300 bg-white/50'
+                        ? 'bg-[#FF5000] border-[#FF5000] shadow-sm'
+                        : 'border-gray-200 bg-white'
                         }`}
                 >
                     {item.selected && <Check className="w-3.5 h-3.5 text-white" strokeWidth={4} />}
                 </button>
 
                 {/* Product Image */}
-                <div className="relative w-24 h-24 rounded-2xl overflow-hidden bg-slate-50 shrink-0">
+                <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-gray-50 shrink-0 border border-gray-50 px-1">
                     <Image
                         src={imgError ? '/soyol-logo.png' : (item.image || '/soyol-logo.png')}
                         onError={() => setImgError(true)}
                         alt={item.name}
                         fill
-                        className="object-contain p-2"
+                        className="object-contain p-1.5"
                     />
-                    {/* Status Badge Over Image - Refined Style */}
-                    <div className="absolute top-1 left-1 z-10 pointer-events-none">
-                        {isPreOrder ? (
-                            <motion.div
-                                whileHover={{ scale: 1.1 }}
-                                className="px-1.5 py-0.5 bg-white/60 backdrop-blur-md text-blue-600 rounded-md border border-white/20 flex items-center gap-1 shadow-sm pointer-events-auto cursor-help"
-                            >
-                                <span className="text-[8px] leading-none">✈</span>
-                                <span className="text-[7px] font-black uppercase tracking-tight">ЗАХИАЛГААР</span>
-                            </motion.div>
-                        ) : (
-                            <motion.div
-                                whileHover={{ scale: 1.1, rotate: [-1, 1, -1] }}
-                                className="px-1.5 py-0.5 bg-white/60 backdrop-blur-md text-emerald-600 rounded-md border border-white/20 flex items-center gap-1 shadow-sm pointer-events-auto cursor-help"
-                            >
-                                <span className="text-[7px] leading-none">⚡</span>
-                                <span className="text-[7px] font-black uppercase tracking-tight">БЭЛЭН</span>
-                            </motion.div>
-                        )}
-                    </div>
                 </div>
 
-                {/* Product Info */}
-                <div className="flex-1 min-w-0 pointer-events-none md:pointer-events-auto">
-                    <h3 className="text-sm font-bold text-slate-800 truncate mb-1 pointer-events-auto">{item.name}</h3>
-
-                    {/* Delivery Estimate (Gemini Powered) */}
-                    {isPreOrder && deliveryEstimate && (
-                        <p className="text-[10px] font-medium text-purple-600 bg-purple-50/50 rounded-lg p-2 mb-2 italic">
-                            {deliveryEstimate}
-                        </p>
-                    )}
-
-                    <div className="flex items-center gap-2 mb-3">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${isPreOrder ? 'text-purple-600 bg-purple-50 border-purple-100/50' : 'text-[#FF5000] bg-orange-50 border-orange-100/50'}`}>
-                            {item.category}
-                        </span>
+                {/* Product Info - Linear Layout */}
+                <div className="flex-1 min-w-0 flex flex-col justify-between self-stretch py-0.5">
+                    <div className="flex justify-between items-start gap-2">
+                        <div className="min-w-0 flex-1">
+                            <h3 className="text-[13px] font-bold text-gray-900 truncate leading-tight mb-1">{item.name}</h3>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-gray-50 text-gray-500 border border-gray-100/50 uppercase tracking-tighter">
+                                {item.category}
+                            </span>
+                        </div>
+                        <div className="text-right shrink-0">
+                            <p className="text-[15px] font-black text-gray-950 tracking-tight leading-none">
+                                {formatPrice(item.price)}
+                            </p>
+                        </div>
                     </div>
 
-                    <div className="flex items-end justify-between pointer-events-auto">
-                        <div className="flex flex-col">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Үнэ</p>
-                            <p className="text-xl font-bold text-[#FF5000]">{formatPrice(item.price)}</p>
+                    <div className="flex items-center justify-between mt-auto">
+                        <div className="flex items-center gap-2">
+                            {isPreOrder ? (
+                                <span className="text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100/50 uppercase">Захиалга</span>
+                            ) : (
+                                <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100/50 uppercase">Бэлэн</span>
+                            )}
                         </div>
 
-                        {/* Quantity Controls - Premium Style */}
-                        <div className="flex items-center bg-slate-50 rounded-2xl p-1 border border-slate-100 shadow-inner">
-                            <motion.button
-                                whileTap={{ scale: 0.9 }}
+                        {/* Quantity Controls - Premium 12px Rounded */}
+                        <div className="flex items-center bg-[#F4F4F5] rounded-[12px] p-0.5 border border-gray-100 shadow-sm">
+                            <button
                                 onClick={() => handleQtyChange(item.quantity - 1)}
-                                className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all ${item.quantity <= 1 ? 'text-slate-300' : 'text-slate-600 hover:bg-white hover:shadow-sm hover:text-[#FF5000]'}`}
+                                className={`w-8 h-8 flex items-center justify-center rounded-[10px] transition-all ${item.quantity <= 1 ? 'text-gray-300' : 'text-gray-600 active:bg-white active:shadow-sm'}`}
                                 disabled={item.quantity <= 1}
                             >
-                                <Minus className="w-4 h-4" />
-                            </motion.button>
-                            <span className="w-10 text-center text-sm font-black text-slate-900">{item.quantity}</span>
-                            <motion.button
-                                whileTap={{ scale: 0.9 }}
+                                <Minus className="w-3.5 h-3.5" strokeWidth={3} />
+                            </button>
+                            <span className="w-8 text-center text-[13px] font-bold text-gray-900">{item.quantity}</span>
+                            <button
                                 onClick={() => handleQtyChange(item.quantity + 1)}
-                                className="w-8 h-8 flex items-center justify-center rounded-xl text-slate-600 hover:bg-white hover:shadow-sm hover:text-[#FF5000] transition-all"
+                                className="w-8 h-8 flex items-center justify-center rounded-[10px] text-gray-600 active:bg-white active:shadow-sm transition-all"
                             >
-                                <Plus className="w-4 h-4" />
-                            </motion.button>
+                                <Plus className="w-3.5 h-3.5" strokeWidth={3} />
+                            </button>
                         </div>
                     </div>
                 </div>

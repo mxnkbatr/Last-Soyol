@@ -207,7 +207,7 @@ export default function MobileFeaturedCarousel({ products }: MobileFeaturedCarou
 
                                     <ProductBadge
                                         isFeatured={product.featured || product.sections?.includes('Онцгой') || product.sections?.includes('Онцлох')}
-                                        className="top-3 right-3 scale-90"
+                                        className="absolute z-10 top-3 right-3 scale-90"
                                     />
 
                                     {/* Stock Badge - Left */}

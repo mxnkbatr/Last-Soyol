@@ -21,21 +21,25 @@ export async function GET(request: NextRequest) {
       filter.category = category;
     }
 
-    if (stockStatus && stockStatus !== 'all') {
-      filter.stockStatus = stockStatus;
+    if (stockStatus) {
+      if (stockStatus === 'in-stock') {
+        // Match either explicit 'in-stock' or missing field
+        filter.$or = [
+          { stockStatus: 'in-stock' },
+          { stockStatus: { $exists: false } },
+          { stockStatus: null }
+        ];
+      } else {
+        filter.stockStatus = stockStatus;
+      }
     }
 
     if (q) {
-      try {
-        filter.$text = { $search: q };
-      } catch (err) {
-        // Fallback to regex search if $text fails (e.g. index missing)
-        filter.$or = [
-          { name: { $regex: q, $options: 'i' } },
-          { description: { $regex: q, $options: 'i' } },
-          { brand: { $regex: q, $options: 'i' } },
-        ];
-      }
+      filter.$or = [
+        { name: { $regex: q, $options: 'i' } },
+        { description: { $regex: q, $options: 'i' } },
+        { brand: { $regex: q, $options: 'i' } },
+      ];
     }
 
     if (minPrice || maxPrice) {
@@ -65,9 +69,8 @@ export async function GET(request: NextRequest) {
     const cursorQuery = products.find(filter).sort({ _id: -1 });
 
     if (q) {
-      // Add text score if searching
-      (cursorQuery as any).project({ score: { $meta: 'textScore' } });
-      (cursorQuery as any).sort({ score: { $meta: 'textScore' }, _id: -1 });
+      // With regex search, sorting by default (_id: -1) which handles the latest
+      (cursorQuery as any).sort({ _id: -1 });
     }
 
     const results = await cursorQuery.limit(limit + 1).toArray();

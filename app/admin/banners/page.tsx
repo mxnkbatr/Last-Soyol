@@ -28,8 +28,11 @@ export default function BannerAdminPage() {
 
     const fetchBanners = async () => {
         try {
-            const res = await fetch('/api/banners?admin=true');
+            const res = await fetch('/api/banners');
             const data = await res.json();
+            // On admin we want all banners, not just active ones. 
+            // Need a separate admin API or query param?
+            // Let's modify the GET API to allow fetching all.
             setBanners(data.banners || []);
         } catch (err) {
             toast.error('Беннер татахад алдаа гарлаа');

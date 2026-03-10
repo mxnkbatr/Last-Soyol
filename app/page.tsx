@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Sparkles, Package, Clock, ArrowUpDown, SlidersHorizontal, X, Tag } from 'lucide-react';
-import FeatureSection from '@/components/FeatureSection';
+
 import PremiumProductGrid from '@/components/PremiumProductGrid';
 import BannerSlider from '@/components/BannerSlider';
 import SpecialProductsCarousel from '@/components/SpecialProductsCarousel';
@@ -23,22 +23,32 @@ type SortType = 'newest' | 'price-low' | 'price-high' | 'name-az';
 export default function HomePage() {
   const { currency, convertPrice } = useLanguage();
   const { t } = useTranslation();
-  const { products: allProducts, isLoading: loading, isLoadingMore, isReachingEnd, size, setSize, error } = useProducts();
-
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [sortBy, setSortBy] = useState<SortType>('name-az');
   const [minPrice, setMinPrice] = useState<string>('');
   const [maxPrice, setMaxPrice] = useState<string>('');
   const [showPriceFilter, setShowPriceFilter] = useState(false);
 
-  // Separate by stock status: "in-stock" = READY (Бэлэн), "pre-order" = Захиалгаар
-  const readyProducts = allProducts.filter((p: Product) => (p.stockStatus || 'in-stock') === 'in-stock');
-  const preOrderProducts = allProducts.filter((p: Product) => (p.stockStatus || '') === 'pre-order');
+  // Convert UI filter to API stockStatus
+  const stockStatus = activeFilter === 'Бэлэн' ? 'in-stock' : activeFilter === 'Захиалга' ? 'pre-order' : undefined;
 
-  // Apply active tab filter (Sections based)
-  let filteredProducts = activeFilter === 'all'
-    ? [...allProducts]
-    : allProducts.filter((p: Product) => p.sections?.includes(activeFilter));
+  const { products: allProducts, isLoading: loading, isLoadingMore, isReachingEnd, size, setSize, error } = useProducts({
+    stockStatus,
+    minPrice: minPrice || undefined,
+    maxPrice: maxPrice || undefined
+  });
+
+  // Fetch featured products separately for carousels to keep them consistent across tabs
+  const { products: featuredProducts, isLoading: loadingFeatured } = useProducts({ featured: true });
+
+  // Client-side mapping is now simplified since the server handles the core filtering
+  let filteredProducts = [...allProducts];
+
+  // If there are other client-side specific sections (like 'Шинэ' which might not be a stock status)
+  // we can still keep this fallback, but for 'Бэлэн' and 'Захиалга' it's already handled by the API.
+  if (activeFilter !== 'all' && activeFilter !== 'Бэлэн' && activeFilter !== 'Захиалга') {
+    filteredProducts = allProducts.filter((p: Product) => p.sections?.includes(activeFilter as string));
+  }
 
   // Apply price filter
   const minPriceNum = minPrice ? parseFloat(minPrice) : 0;
@@ -92,8 +102,8 @@ export default function HomePage() {
 
       {/* Mobile Featured Products Carousel - Only on Mobile */}
       <div className="lg:hidden">
-        {!loading && allProducts.length > 0 && (
-          <MobileFeaturedCarousel products={allProducts as any} />
+        {!loadingFeatured && featuredProducts.length > 0 && (
+          <MobileFeaturedCarousel products={featuredProducts as any} />
         )}
       </div>
 
@@ -109,12 +119,15 @@ export default function HomePage() {
           </div>
 
           {/* Special Products Carousel */}
-          {!loading && allProducts.length > 0 && (
-            <SpecialProductsCarousel products={allProducts as any} />
+          {!loadingFeatured && featuredProducts.length > 0 && (
+            <SpecialProductsCarousel products={featuredProducts as any} />
           )}
 
           {/* Filter & Sort Bar */}
-          <div className="flex items-center justify-between gap-4 mb-6 px-3 lg:px-0 flex-wrap sticky top-16 lg:static z-30 bg-white/80 backdrop-blur-md lg:bg-transparent py-2 lg:py-0 rounded-2xl lg:rounded-none">
+          <div
+            className="flex items-center justify-between gap-4 mb-6 px-3 lg:px-0 flex-wrap sticky top-[56px] lg:static z-30 bg-white/80 backdrop-blur-md lg:bg-transparent py-2 lg:py-0 rounded-2xl lg:rounded-none"
+            style={{ top: 'calc(56px + env(safe-area-inset-top))' }}
+          >
             <div className="flex items-center gap-2 lg:gap-3 flex-wrap overflow-x-auto scrollbar-hide pb-1 lg:pb-0">
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -277,13 +290,11 @@ export default function HomePage() {
               </div>
 
               {/* Infinite Scroll Trigger */}
-              {activeFilter === 'all' && (
-                <InfiniteScrollTrigger
-                  onLoadMore={() => setSize(size + 1)}
-                  hasMore={!isReachingEnd}
-                  isLoading={!!isLoadingMore}
-                />
-              )}
+              <InfiniteScrollTrigger
+                onLoadMore={() => setSize(size + 1)}
+                hasMore={!isReachingEnd}
+                isLoading={!!isLoadingMore}
+              />
             </>
           )}
         </div>

@@ -232,7 +232,7 @@ export default function SpecialProductsCarousel({ products }: SpecialProductsCar
 
                                     <ProductBadge
                                         isFeatured={product.featured || product.sections?.includes('Онцгой') || product.sections?.includes('Онцлох')}
-                                        className="top-4 right-4"
+                                        className="absolute z-10 top-4 right-4"
                                     />
 
                                     {/* Quick Add Button - Bigger & Bolder */}

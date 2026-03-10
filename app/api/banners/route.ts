@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCollection } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
-import { auth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
     try {
-        const admin = request.nextUrl.searchParams.get('admin') === 'true';
         const banners = await getCollection('banners');
-
-        const filter = admin ? {} : { active: true };
-        const results = await banners.find(filter).sort({ order: 1 }).toArray();
+        const results = await banners.find({ active: true }).sort({ order: 1 }).toArray();
 
         const mappedResults = results.map((banner) => ({
             ...banner,
@@ -27,11 +23,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        const { userId, role } = await auth();
-        if (!userId || role !== 'admin') {
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-        }
-
         const body = await request.json();
         const banners = await getCollection('banners');
 

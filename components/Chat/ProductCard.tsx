@@ -56,11 +56,10 @@ export default function ProductCard({ product }: ProductCardProps) {
                         {[...Array(5)].map((_, i) => (
                             <Star
                                 key={i}
-                                className={`w-3.5 h-3.5 ${
-                                    i < Math.round(product.rating || 0)
+                                className={`w-3.5 h-3.5 ${i < Math.round(product.rating || 0)
                                         ? 'text-yellow-400 fill-yellow-400'
                                         : 'text-slate-200 fill-slate-200'
-                                }`}
+                                    }`}
                                 strokeWidth={1.2}
                             />
                         ))}

@@ -19,17 +19,17 @@ const ProductSection = memo(function ProductSection({ title, products, viewAllHr
     <section className={hideHeader ? '' : 'relative py-8 sm:py-12 md:py-16'}>
       {/* Subtle dot pattern background */}
       {!hideHeader && (
-        <div 
-          className="absolute inset-0 opacity-[0.02] pointer-events-none" 
+        <div
+          className="absolute inset-0 opacity-[0.02] pointer-events-none"
           style={{
             backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)',
             backgroundSize: '24px 24px'
-          }} 
+          }}
         />
       )}
-      
+
       <div className={hideHeader ? '' : 'relative max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8'}>
-        
+
         {/* Section Header */}
         {!hideHeader && title && (
           <div className="flex items-center justify-between mb-6 sm:mb-8 md:mb-10">

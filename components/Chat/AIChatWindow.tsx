@@ -35,7 +35,7 @@ export default function AIChatWindow({ onBack }: AIChatWindowProps) {
     const addItem = useCartStore((s) => s.addItem);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const processedActions = useRef<Set<string>>(new Set());
-    
+
     // Attachment state
     const [attachment, setAttachment] = useState<string | null>(null);
     const [attachmentType, setAttachmentType] = useState<'image' | 'video' | null>(null);
@@ -81,7 +81,7 @@ export default function AIChatWindow({ onBack }: AIChatWindowProps) {
         }
 
         // Debug useChat return values
-        console.log('useChat debug:', { 
+        console.log('useChat debug:', {
             status,
             isLoading: status === 'streaming' || status === 'submitted',
             hasSendMessage: typeof sendMessage === 'function',
@@ -115,7 +115,7 @@ export default function AIChatWindow({ onBack }: AIChatWindowProps) {
 
                 if (!processedActions.current.has(fullMatch)) {
                     processedActions.current.add(fullMatch);
-                    
+
                     if (actionType === 'ADD_TO_CART_DATA') {
                         try {
                             const parsed = JSON.parse(actionContent);
@@ -132,8 +132,8 @@ export default function AIChatWindow({ onBack }: AIChatWindowProps) {
                             console.error('Failed to parse product data for cart', e);
                         }
                     } else if (actionType === 'NAVIGATE') {
-                         router.push(actionContent);
-                         toast.success('Хуудас руу шилжиж байна...');
+                        router.push(actionContent);
+                        toast.success('Хуудас руу шилжиж байна...');
                     }
                 }
             }
@@ -163,11 +163,11 @@ export default function AIChatWindow({ onBack }: AIChatWindowProps) {
         e.preventDefault();
         const safeInput = input || '';
         if ((!safeInput.trim() && !attachment) || isLoading) {
-             return;
+            return;
         }
 
         const currentAttachment = attachment;
-        
+
         try {
             const contentParts: any[] = [];
             if (safeInput.trim()) {
@@ -176,13 +176,13 @@ export default function AIChatWindow({ onBack }: AIChatWindowProps) {
             if (currentAttachment) {
                 contentParts.push({ type: 'image', image: currentAttachment });
             }
-            
+
             // Construct the message object
             // Use simple string if no attachment, otherwise content parts
             const content = currentAttachment ? contentParts : safeInput.trim();
-            const messagePayload = { 
-                role: 'user', 
-                content: content 
+            const messagePayload = {
+                role: 'user',
+                content: content
             };
 
             // Use sendMessage
@@ -211,10 +211,10 @@ export default function AIChatWindow({ onBack }: AIChatWindowProps) {
         } else if (content && typeof content === 'object' && typeof (content as any).text === 'string') {
             textContent = (content as any).text;
         }
-        
+
         // Remove all ACTION tags and their content for professional UI
         const cleanContent = (textContent || '').replace(/\[ACTION:.*?:END_ACTION\]/g, '');
-        
+
         const regex = /\[(PRODUCT_CARD|ADDRESS_CONFIRMATION):\s*(\{[\s\S]*?\})\]/g;
         const parts: Array<{ type: string; content?: string; data?: any }> = [];
         let lastIndex = 0;
@@ -224,7 +224,7 @@ export default function AIChatWindow({ onBack }: AIChatWindowProps) {
             if (match.index > lastIndex) {
                 parts.push({ type: 'text', content: cleanContent.slice(lastIndex, match.index) });
             }
-            
+
             try {
                 const type = match[1];
                 const data = JSON.parse(match[2]);
@@ -233,7 +233,7 @@ export default function AIChatWindow({ onBack }: AIChatWindowProps) {
                 console.error('Failed to parse card JSON', e);
                 parts.push({ type: 'text', content: match[0] });
             }
-            
+
             lastIndex = regex.lastIndex;
         }
 
@@ -246,37 +246,37 @@ export default function AIChatWindow({ onBack }: AIChatWindowProps) {
         const addressCards = parts.filter(p => p.type === 'ADDRESS_CONFIRMATION' && p.data);
 
         return (
-          <div className="space-y-4">
-            {textParts.map((part, idx) => (
-              <div key={`t-${idx}`} className="prose prose-invert prose-sm max-w-none leading-relaxed break-words">
-                <ReactMarkdown>{part.content as string}</ReactMarkdown>
-              </div>
-            ))}
-            
-            {productCards.length > 0 && (
-              <div className="relative -mx-5 px-5">
-                <div className="flex gap-3 overflow-x-auto pb-4 pt-2 scrollbar-hide snap-x snap-mandatory">
-                  {productCards.map((part, idx) => (
-                    <motion.div 
-                      key={`pc-${idx}`} 
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: idx * 0.1 }}
-                      className="shrink-0 w-[240px] snap-center"
-                    >
-                      <ProductCard product={part.data} />
-                    </motion.div>
-                  ))}
-                </div>
-                {/* Visual cue for horizontal scroll */}
-                <div className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-slate-800 to-transparent pointer-events-none" />
-              </div>
-            )}
-            
-            {addressCards.map((part, idx) => (
-              <AddressConfirmationCard key={`ac-${idx}`} data={part.data} />
-            ))}
-          </div>
+            <div className="space-y-4">
+                {textParts.map((part, idx) => (
+                    <div key={`t-${idx}`} className="prose prose-invert prose-sm max-w-none leading-relaxed break-words">
+                        <ReactMarkdown>{part.content as string}</ReactMarkdown>
+                    </div>
+                ))}
+
+                {productCards.length > 0 && (
+                    <div className="relative -mx-5 px-5">
+                        <div className="flex gap-3 overflow-x-auto pb-4 pt-2 scrollbar-hide snap-x snap-mandatory">
+                            {productCards.map((part, idx) => (
+                                <motion.div
+                                    key={`pc-${idx}`}
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: idx * 0.1 }}
+                                    className="shrink-0 w-[240px] snap-center"
+                                >
+                                    <ProductCard product={part.data} />
+                                </motion.div>
+                            ))}
+                        </div>
+                        {/* Visual cue for horizontal scroll */}
+                        <div className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-slate-800 to-transparent pointer-events-none" />
+                    </div>
+                )}
+
+                {addressCards.map((part, idx) => (
+                    <AddressConfirmationCard key={`ac-${idx}`} data={part.data} />
+                ))}
+            </div>
         );
     };
 
@@ -316,16 +316,16 @@ export default function AIChatWindow({ onBack }: AIChatWindowProps) {
                     >
                         {/* Avatar */}
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-lg ${msg.role === 'user'
-                                ? 'bg-[#FF5000] ring-2 ring-orange-500/30'
-                                : 'bg-gradient-to-tr from-blue-600 to-cyan-400 ring-2 ring-blue-500/30'
+                            ? 'bg-[#FF5000] ring-2 ring-orange-500/30'
+                            : 'bg-gradient-to-tr from-blue-600 to-cyan-400 ring-2 ring-blue-500/30'
                             }`}>
                             {msg.role === 'user' ? <User className="w-4 h-4 text-white" strokeWidth={1.2} /> : <Bot className="w-4 h-4 text-white" strokeWidth={1.2} />}
                         </div>
 
                         {/* Bubble */}
                         <div className={`max-w-[85%] rounded-2xl px-5 py-3 shadow-md ${msg.role === 'user'
-                                ? 'bg-[#FF5000] text-white rounded-tr-none'
-                                : 'bg-slate-800 text-slate-200 rounded-tl-none border border-white/5'
+                            ? 'bg-[#FF5000] text-white rounded-tr-none'
+                            : 'bg-slate-800 text-slate-200 rounded-tl-none border border-white/5'
                             }`}>
                             {msg.experimental_attachments && msg.experimental_attachments.length > 0 && (
                                 <div className="mb-2">
@@ -362,7 +362,7 @@ export default function AIChatWindow({ onBack }: AIChatWindowProps) {
                             <Bot className="w-4 h-4 text-white" strokeWidth={1.2} />
                         </div>
                         <div className="bg-slate-800 rounded-2xl rounded-tl-none px-4 py-3 border border-white/5 flex items-center gap-1.5 h-[46px]">
-                             {/* Lottie-like modern typing indicator */}
+                            {/* Lottie-like modern typing indicator */}
                             <span className="w-1.5 h-1.5 bg-gradient-to-tr from-blue-400 to-cyan-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
                             <span className="w-1.5 h-1.5 bg-gradient-to-tr from-blue-400 to-cyan-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
                             <span className="w-1.5 h-1.5 bg-gradient-to-tr from-blue-400 to-cyan-400 rounded-full animate-bounce"></span>
@@ -376,28 +376,28 @@ export default function AIChatWindow({ onBack }: AIChatWindowProps) {
             <div className="absolute bottom-0 w-full p-4 pb-8 bg-slate-900/80 backdrop-blur-md border-t border-white/10 z-20">
                 {attachment && (
                     <div className="absolute -top-16 left-4 bg-slate-800 p-2 rounded-lg border border-white/10 flex items-center gap-2 shadow-lg">
-                         {attachmentType === 'video' ? (
-                             <div className="w-10 h-10 bg-slate-700 rounded flex items-center justify-center text-xs">Video</div>
-                         ) : (
-                             <img src={attachment} alt="Preview" className="w-10 h-10 rounded object-cover" />
-                         )}
-                         <button onClick={clearAttachment} className="p-1 hover:bg-slate-700 rounded-full">
-                             <X className="w-4 h-4 text-slate-400" />
-                         </button>
+                        {attachmentType === 'video' ? (
+                            <div className="w-10 h-10 bg-slate-700 rounded flex items-center justify-center text-xs">Video</div>
+                        ) : (
+                            <img src={attachment} alt="Preview" className="w-10 h-10 rounded object-cover" />
+                        )}
+                        <button onClick={clearAttachment} className="p-1 hover:bg-slate-700 rounded-full">
+                            <X className="w-4 h-4 text-slate-400" />
+                        </button>
                     </div>
                 )}
                 <form
                     onSubmit={onFormSubmit}
                     className="relative flex items-center gap-2 bg-slate-800/50 backdrop-blur-sm p-2 rounded-3xl border border-white/5 focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20 transition-all shadow-lg"
                 >
-                    <input 
-                        type="file" 
-                        accept="image/*,video/*" 
-                        className="hidden" 
+                    <input
+                        type="file"
+                        accept="image/*,video/*"
+                        className="hidden"
                         ref={fileInputRef}
                         onChange={handleFileSelect}
                     />
-                    <button 
+                    <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
                         className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors"

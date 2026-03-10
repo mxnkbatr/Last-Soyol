@@ -70,7 +70,7 @@ export default function PremiumProductCard({ product, isFeatured = false }: { pr
                             <ProductBadge
                                 sections={product.sections}
                                 isFeatured={product.featured}
-                                className="static"
+                                className="z-10"
                             />
                             {product.discountPercent && product.discountPercent > 0 && (
                                 <div className="px-2.5 py-1 bg-[#FF3B30] rounded-lg flex items-center shadow-lg shadow-red-500/20">
@@ -79,7 +79,22 @@ export default function PremiumProductCard({ product, isFeatured = false }: { pr
                                     </span>
                                 </div>
                             )}
-                            {(!product.sections || !product.sections.includes('Шинэ')) && (
+                            {product.stockStatus === 'in-stock' && (
+                                <div className="px-2.5 py-1 bg-emerald-50/90 backdrop-blur-md border border-emerald-200/50 rounded-lg flex items-center shadow-sm">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse" />
+                                    <span className="text-[9px] sm:text-[10px] font-extrabold tracking-widest text-emerald-700 uppercase">
+                                        БЭЛЭН
+                                    </span>
+                                </div>
+                            )}
+                            {product.stockStatus === 'pre-order' && (
+                                <div className="px-2.5 py-1 bg-blue-50/90 backdrop-blur-md border border-blue-200/50 rounded-lg flex items-center shadow-sm">
+                                    <span className="text-[9px] sm:text-[10px] font-extrabold tracking-widest text-blue-700 uppercase">
+                                        ЗАХИАЛГА
+                                    </span>
+                                </div>
+                            )}
+                            {(!product.sections || !product.sections.includes('Шинэ')) && !product.stockStatus && (
                                 <div className="px-2.5 py-1 bg-gray-900/80 backdrop-blur-sm border border-gray-700/50 rounded-full flex items-center shadow-sm">
                                     <span className="text-[9px] sm:text-[10px] font-extrabold tracking-widest text-white uppercase">
                                         {product.category}

@@ -10,35 +10,41 @@ export default function FloatingChatButton() {
     const pathname = usePathname();
     const [isVisible, setIsVisible] = useState(true);
     const [isOpen, setIsOpen] = useState(false);
+    const [showButton, setShowButton] = useState(true);
     const lastScrollY = useRef(0);
     const [yOffset, setYOffset] = useState(0);
 
     // Framer Motion scroll tracking
     const { scrollY } = useScroll();
 
-    // Create a springy motion value for the vertical offset
+    // Create a springy motion value for the vertical offset (visual feedback)
     const springY = useSpring(0, { stiffness: 100, damping: 20 });
 
     useMotionValueEvent(scrollY, "change", (latest) => {
         const diff = latest - lastScrollY.current;
 
-        // Only react to significant scrolls
-        if (Math.abs(diff) > 5) {
-            // Scroll down -> Move UP (negative Y)
-            // Scroll up -> Move DOWN (positive Y)
-            const targetOffset = diff > 0 ? -40 : 40;
-            springY.set(targetOffset);
+        // Scroll to hide logic
+        if (latest > 100) { // Only hide after some initial scroll
+            if (diff > 10) { // Scrolling DOWN
+                setShowButton(false);
+            } else if (diff < -10) { // Scrolling UP
+                setShowButton(true);
+            }
+        } else {
+            setShowButton(true);
+        }
 
-            // Immediately start returning to 0 for a "bounce" or "inertia" effect
-            setTimeout(() => {
-                springY.set(0);
-            }, 150);
+        // Tactile bounce effect
+        if (Math.abs(diff) > 5) {
+            const targetOffset = diff > 0 ? -10 : 10;
+            springY.set(targetOffset);
+            setTimeout(() => springY.set(0), 150);
         }
 
         lastScrollY.current = latest;
     });
 
-    // Hide on messages page itself to avoid redundancy, but keep flexible
+    // Hide on specific pages
     useEffect(() => {
         if (pathname?.startsWith('/admin')) {
             setIsVisible(false);
@@ -50,6 +56,7 @@ export default function FloatingChatButton() {
     const toggleChat = () => setIsOpen(!isOpen);
 
     const isProductPage = pathname?.includes('/product/');
+    const isCartPage = pathname === '/cart';
 
     return (
         <>
@@ -57,11 +64,20 @@ export default function FloatingChatButton() {
                 {isVisible && (
                     <motion.div
                         initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
+                        animate={{
+                            scale: showButton || isOpen ? 1 : 0,
+                            opacity: showButton || isOpen ? 1 : 0,
+                            x: showButton || isOpen ? 0 : 20,
+                        }}
                         exit={{ scale: 0, opacity: 0 }}
-                        transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-                        className={`fixed z-[60] right-4 md:right-8 ${isProductPage ? 'md:top-1/2 md:bottom-auto' : 'top-1/2'}`}
-                        style={{ y: isProductPage ? 0 : springY, bottom: isProductPage ? 'calc(56px + 80px)' : undefined }}
+                        transition={{ type: 'spring', stiffness: 260, damping: 25 }}
+                        className={`fixed z-[60] right-4 md:right-8 ${isCartPage
+                            ? 'bottom-[130px]' // Position above the cart sticky footer
+                            : isProductPage
+                                ? 'md:top-1/2 md:bottom-auto bottom-[140px]'
+                                : 'top-1/2'
+                            }`}
+                        style={{ y: isProductPage ? 0 : springY }}
                     >
                         <motion.button
                             onClick={toggleChat}

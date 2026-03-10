@@ -46,7 +46,7 @@ export default function LuxuryNavbar() {
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
-  const [searchResults, setSearchResults] = useState<{ id: string; name: string; price: number; image?: string | null; category?: string }[]>([]);
+  const [searchResults, setSearchResults] = useState<{ id: string; name: string; price: number; images?: string[]; category?: string }[]>([]);
   const [isLoadingSearch, setIsLoadingSearch] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -152,10 +152,9 @@ export default function LuxuryNavbar() {
         animate={{ y: 0 }}
         transition={{ type: 'spring', stiffness: 100 }}
         className={`hidden lg:block fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
-          ? 'bg-white border-b border-orange-100/50 shadow-lg shadow-orange-50/50'
-          : 'bg-white border-b border-gray-100/30'
+          ? 'bg-white/80 backdrop-blur-xl border-b border-black/[0.05] shadow-sm'
+          : 'bg-white/80 backdrop-blur-xl border-b border-black/[0.02]'
           }`}
-        style={{ backdropFilter: 'blur(12px)' }}
       >
         <div className="max-w-7xl mx-auto">
           <div className="px-4 sm:px-6 lg:px-8">
@@ -185,9 +184,9 @@ export default function LuxuryNavbar() {
               <div className="flex-1 max-w-[600px] mx-8">
                 <form onSubmit={handleSearch} className="relative w-full">
                   <motion.div
-                    className={`relative w-full group rounded-2xl transition-all duration-300 ${searchFocused
+                    className={`relative w-full group rounded-full transition-all duration-300 ${searchFocused
                       ? 'bg-white border-2 border-[#FF5000] shadow-md'
-                      : 'bg-white border border-gray-100 hover:border-gray-200 shadow-sm'
+                      : 'bg-[#f4f4f5] border-2 border-transparent hover:bg-gray-200/50'
                       }`}
                     animate={{ scale: searchFocused ? 1.02 : 1, y: searchFocused ? -2 : 0 }}
                     whileHover={{ scale: 1.02, y: -2 }}
@@ -200,19 +199,19 @@ export default function LuxuryNavbar() {
                         className="pl-4"
                       >
                         <Search
-                          className={`w-5 h-5 transition-colors duration-300 ${searchFocused ? 'text-[#FF5000]' : 'text-gray-400 group-hover:text-[#FF5000]'
+                          className={`w-6 h-6 transition-colors duration-300 ${searchFocused ? 'text-[#FF5000]' : 'text-gray-400 group-hover:text-[#FF5000]'
                             }`}
                           strokeWidth={1.5}
                         />
                       </motion.div>
                       <input
                         type="text"
-                        placeholder={t('nav', 'search')}
+                        placeholder="Хайх утгаа оруулна уу..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onFocus={() => setSearchFocused(true)}
                         onBlur={() => setTimeout(() => setSearchFocused(false), 180)}
-                        className="flex-1 px-4 py-3 bg-transparent text-sm font-medium text-gray-900 placeholder-gray-400 focus:outline-none transition-all"
+                        className="flex-1 px-4 py-3 bg-transparent text-sm font-medium text-gray-900 placeholder-gray-500 tracking-wide focus:outline-none transition-all"
                         autoComplete="off"
                       />
                       <AnimatePresence>
@@ -263,7 +262,7 @@ export default function LuxuryNavbar() {
               <motion.div
                 animate={{ scale: scrolled ? 0.9 : 1 }}
                 transition={{ duration: 0.3 }}
-                className="flex items-center gap-3 flex-shrink-0"
+                className="flex items-center gap-1.5 flex-shrink-0"
               >
                 <div className="hidden lg:block">
                   <LanguageCurrencySelector />
@@ -333,7 +332,7 @@ export default function LuxuryNavbar() {
                     </>
                   ) : (
                     <Link href="/sign-in" className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-lg transition-colors group">
-                      <User className="w-5 h-5 text-gray-600 group-hover:text-orange-500" strokeWidth={1.2} />
+                      <User className="w-6 h-6 text-gray-600 group-hover:text-orange-500" strokeWidth={1.5} />
                       <span className="text-sm font-medium text-gray-600 group-hover:text-orange-500">{t('nav', 'signIn')}</span>
                     </Link>
                   )}
@@ -343,53 +342,51 @@ export default function LuxuryNavbar() {
 
                 <Link href="/wishlist">
                   <motion.div
-                    whileHover={{ scale: 1.1, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.2, y: -2 }}
+                    whileTap={{ scale: 0.9 }}
                     animate={wishlistBump ? { x: [0, -4, 4, -4, 4, 0] } : {}}
-                    transition={{ duration: 0.4 }}
-                    className="relative p-2 hover:bg-gray-50 rounded-2xl transition-colors group cursor-pointer border border-transparent hover:border-gray-100"
+                    transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                    className="relative p-2 hover:bg-gray-50 rounded-2xl transition-all group cursor-pointer border border-transparent hover:border-gray-100"
                   >
                     <Heart
-                      className={`w-5 h-5 transition-colors ${mounted && wishlistItemsCount > 0 ? 'text-[#FF5000] fill-orange-50' : 'text-gray-600 group-hover:text-[#FF5000]'
+                      className={`w-6 h-6 transition-colors ${mounted && wishlistItemsCount > 0 ? 'text-[#FF5000] fill-orange-50/50' : 'text-gray-600 group-hover:text-[#FF5000]'
                         }`}
-                      strokeWidth={1.2}
+                      strokeWidth={1.5}
                     />
                     {mounted && wishlistItemsCount > 0 && (
                       <motion.span
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        className="absolute -top-1 -right-1 w-5 h-5 bg-[#FF5000] text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-sm"
+                        className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-600 rounded-full border-2 border-white shadow-sm"
+                      />
+                    )}
+                  </motion.div>
+                </Link>
+
+                <Link href="/cart">
+                  <motion.div
+                    whileHover={{ scale: 1.2, y: -2 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="relative p-2 hover:bg-gray-50 rounded-2xl transition-all group cursor-pointer border border-transparent hover:border-gray-100"
+                  >
+                    <ShoppingBag
+                      className={`w-6 h-6 transition-colors ${mounted && cartItemsCount > 0 ? 'text-[#FF5000]' : 'text-gray-600 group-hover:text-[#FF5000]'
+                        }`}
+                      strokeWidth={1.5}
+                    />
+                    {mounted && cartItemsCount > 0 && (
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 bg-[#FF5000] text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-sm"
                       >
-                        {wishlistItemsCount}
+                        {cartItemsCount}
                       </motion.span>
                     )}
                   </motion.div>
                 </Link>
 
-                <motion.button
-                  whileHover={{ scale: 1.1, y: -2 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex items-center gap-2 p-2 rounded-2xl hover:bg-gray-50 relative group transition-all border border-transparent hover:border-gray-100"
-                  onClick={() => router.push('/cart')}
-                >
-                  <ShoppingBag className="w-5 h-5 text-gray-600 group-hover:text-[#FF5000] transition-colors" strokeWidth={1.2} />
-                  {mounted && cartItemsCount > 0 && (
-                    <>
-                      <motion.span
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="absolute -top-1 -right-1 w-5 h-5 bg-[#FF5000] text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-sm"
-                      >
-                        {cartItemsCount}
-                      </motion.span>
-                      <motion.span
-                        animate={{ scale: [1, 1.5, 1], opacity: [0.7, 0, 0.7] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                        className="absolute -top-1 -right-1 w-5 h-5 bg-[#FF5000] rounded-full pointer-events-none"
-                      />
-                    </>
-                  )}
-                </motion.button>
+
               </motion.div>
             </div>
           </div>
@@ -411,7 +408,7 @@ export default function LuxuryNavbar() {
                       transition={{ type: 'spring', stiffness: 400, damping: 17 }}
                     >
                       <div className={`flex items-center gap-2 transition-all duration-300 ${isActive
-                        ? 'text-orange-600 drop-shadow-[0_0_8px_rgba(249,115,22,0.3)]'
+                        ? 'text-orange-600'
                         : 'text-gray-600 hover:text-orange-500'
                         }`}>
                         <Icon
@@ -419,13 +416,13 @@ export default function LuxuryNavbar() {
                             }`}
                           strokeWidth={1.2}
                         />
-                        <span className="text-sm font-semibold tracking-tight">{category.name}</span>
+                        <span className="text-sm font-medium tracking-wider">{category.name}</span>
                       </div>
                       {isActive && (
                         <motion.div
                           layoutId="activeTab"
-                          className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full mx-4"
-                          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                          className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-orange-500 rounded-full"
+                          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                         />
                       )}
                     </motion.div>
@@ -449,15 +446,22 @@ export default function LuxuryNavbar() {
           </Link>
           <div className="flex items-center gap-1.5">
             <Link href="/search" className="p-2 text-slate-500 active:scale-90 transition-transform">
-              <Search className="w-5 h-5" strokeWidth={2} />
+              <Search className="w-6 h-6" strokeWidth={1.5} />
             </Link>
-            <Link href="/cart" className="p-2 text-slate-500 active:scale-90 transition-transform relative">
-              <ShoppingBag className="w-5 h-5" strokeWidth={2} />
-              {mounted && cartItemsCount > 0 && <span className="absolute top-2 right-2 w-2 h-2 bg-[#FF5000] rounded-full border border-white" />}
+            <Link href="/wishlist">
+              <motion.div
+                whileTap={{ scale: 0.9 }}
+                className="p-2 text-slate-500 relative"
+              >
+                <Heart className="w-6 h-6" strokeWidth={1.5} />
+                {mounted && wishlistItemsCount > 0 && (
+                  <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-600 rounded-full border-2 border-white shadow-sm" />
+                )}
+              </motion.div>
             </Link>
             <NotificationBell />
             <button onClick={() => setMobileMenuOpen(true)} className="p-2 text-slate-600 active:scale-90 transition-transform">
-              <Menu className="w-6 h-6" strokeWidth={2} />
+              <Menu className="w-6 h-6" strokeWidth={1.5} />
             </button>
           </div>
         </div>

@@ -114,7 +114,32 @@ function SearchContent() {
     { text: 'Winter Sale', status: 'HOT' },
   ];
 
-  // The unused legacy static categories list has been removed
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.06,
+        delayChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants: any = {
+    hidden: { opacity: 0, y: 40, scale: 0.85, rotateX: 15 },
+    show: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      rotateX: 0,
+      transition: {
+        type: "spring",
+        stiffness: 260,
+        damping: 24,
+        mass: 1
+      }
+    }
+  };
 
   if (!q.trim()) {
     return (
@@ -130,19 +155,28 @@ function SearchContent() {
           </div>
 
           {/* Trending Horizontal Scroll */}
-          <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide pb-2">
-            <div className="flex items-center gap-1.5 shrink-0 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            className="flex items-center gap-3 overflow-x-auto scrollbar-hide pb-2"
+          >
+            <motion.div variants={itemVariants} className="flex items-center gap-1.5 shrink-0 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
               <TrendingUp className="w-3.5 h-3.5 text-orange-500" />
               <span className="text-xs font-bold text-gray-700">Эрэлттэй</span>
-            </div>
+            </motion.div>
             {trendingTags.map((tag, idx) => (
-              <div key={idx} className="flex items-center gap-2 shrink-0 bg-white/70 backdrop-blur-md px-4 py-1.5 rounded-full border border-gray-100/50 shadow-sm transition-all active:scale-95">
+              <motion.div
+                key={idx}
+                variants={itemVariants}
+                className="flex items-center gap-2 shrink-0 bg-white/70 backdrop-blur-md px-4 py-1.5 rounded-full border border-gray-100/50 shadow-sm transition-all active:scale-95"
+              >
                 <span className="text-xs font-medium text-gray-600">{tag.text}</span>
                 {tag.status === 'HOT' && <Flame className="w-3 h-3 text-red-500 fill-red-500" />}
                 {tag.status === 'NEW' && <Sparkles className="w-3 h-3 text-blue-500 fill-blue-500" />}
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
 
         {/* Discovery Sections */}
@@ -155,23 +189,29 @@ function SearchContent() {
               <ChevronRight className="w-5 h-5 text-gray-400" />
             </div>
             {categories.length > 0 ? (
-              <div className="grid grid-cols-4 gap-y-8 gap-x-4">
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+                className="grid grid-cols-4 gap-y-8 gap-x-1 sm:gap-x-4"
+              >
                 {categories.map((cat, idx) => (
-                  <Link key={cat.id || idx} href={`/?category=${cat.id || cat._id}`}>
+                  <Link key={cat.id || idx} href={`/categories?selected=${cat.id || cat._id}`}>
                     <motion.div
+                      variants={itemVariants}
                       whileTap={{ scale: 0.95 }}
                       className="flex flex-col items-center gap-3 cursor-pointer"
                     >
-                      <div className="w-16 h-16 rounded-[20px] bg-white border border-gray-100 shadow-[0_4px_12px_rgba(0,0,0,0.03)] flex items-center justify-center text-gray-800 transition-all duration-300 hover:shadow-md hover:border-gray-200 hover:-translate-y-1">
-                        <span className="text-2xl">{cat.icon || '📦'}</span>
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-[20px] bg-white border border-gray-100 shadow-[0_4px_12px_rgba(0,0,0,0.03)] flex items-center justify-center text-gray-800 transition-all duration-300 hover:shadow-md hover:border-gray-200 hover:-translate-y-1">
+                        <span className="text-xl sm:text-2xl">{cat.icon || '📦'}</span>
                       </div>
-                      <span className="text-[11px] font-normal text-gray-600 tracking-wide text-center leading-tight max-w-full truncate px-1">
+                      <span className="text-[10px] sm:text-[11px] font-normal text-gray-600 tracking-wide text-center leading-tight max-w-full truncate px-1">
                         {cat.name}
                       </span>
                     </motion.div>
                   </Link>
                 ))}
-              </div>
+              </motion.div>
             ) : (
               <div className="grid grid-cols-4 gap-y-8 gap-x-4">
                 {Array(8).fill(0).map((_, i) => (
@@ -184,6 +224,21 @@ function SearchContent() {
             )}
           </section>
 
+          {/* Trending Items Search Pills */}
+          <section className="bg-orange-50/50 p-5 rounded-[32px] border border-orange-100/50">
+            <h3 className="text-xs font-black text-orange-600 uppercase tracking-widest flex items-center gap-2 mb-4">
+              <Flame className="w-4 h-4" /> {t('nav', 'trending')}
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {trendingTags.map((tag, idx) => (
+                <div key={idx} className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-orange-100 shadow-sm active:scale-95 transition-all">
+                  <span className="text-xs font-bold text-gray-700">{tag.text}</span>
+                  {tag.status === 'HOT' && <Flame className="w-3 h-3 text-red-500 fill-red-500" />}
+                </div>
+              ))}
+            </div>
+          </section>
+
           {/* Recommended Section (Temu Style Masonry) */}
           <section>
             <div className="flex items-center gap-2 mb-6">
@@ -191,21 +246,28 @@ function SearchContent() {
               <h3 className="text-lg font-black text-gray-900">Танд санал болгох</h3>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 p-2">
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="show"
+              className="grid grid-cols-2 gap-4 p-2"
+            >
               {recommended.map((product, index) => (
-                <DiscoveryProductCard
-                  key={product.id}
-                  product={product as any}
-                  index={index}
-                  showTrendingBadge={index < 2}
-                />
+                <motion.div key={product.id} variants={itemVariants}>
+                  <DiscoveryProductCard
+                    product={product as any}
+                    index={index}
+                    showTrendingBadge={index < 2}
+                    disableInitialAnimation={true}
+                  />
+                </motion.div>
               ))}
 
               {/* If no recommendations, show some placeholders or skeletons */}
               {recommended.length === 0 && Array(4).fill(0).map((_, i) => (
                 <div key={i} className="aspect-[3/4] bg-gray-100 rounded-3xl animate-pulse" />
               ))}
-            </div>
+            </motion.div>
 
             <button className="w-full mt-8 py-4 bg-white border border-gray-200 rounded-2xl text-gray-500 font-bold text-sm shadow-sm active:scale-95 transition-all">
               Илүүг үзэх
@@ -288,15 +350,22 @@ function SearchContent() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-2">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-2"
+          >
             {products.map((product, index) => (
-              <DiscoveryProductCard
-                key={product.id}
-                product={product as any}
-                index={index}
-              />
+              <motion.div key={product.id} variants={itemVariants}>
+                <DiscoveryProductCard
+                  product={product as any}
+                  index={index}
+                  disableInitialAnimation={true}
+                />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
       </div>
     </div>

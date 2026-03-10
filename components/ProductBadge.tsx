@@ -46,7 +46,7 @@ export default function ProductBadge({
                 ]
             }}
             transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-            className={`absolute z-10 px-2.5 py-1 rounded-full flex items-center gap-1 bg-gradient-to-r backdrop-blur-md border text-white shadow-lg pointer-events-auto ${badgeStyle} ${className}`}
+            className={`px-2.5 py-1 rounded-full flex items-center gap-1 bg-gradient-to-r backdrop-blur-md border text-white shadow-lg pointer-events-auto ${badgeStyle} ${className}`}
         >
             <span className="text-[11px] leading-none mb-0.5">{badgeIcon}</span>
             <span className="text-[9px] font-black uppercase tracking-widest leading-none mt-[1px]">

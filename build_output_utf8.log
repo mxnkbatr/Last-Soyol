@@ -1,0 +1,125 @@
+﻿
+> soyol-video-shop@2.0.0 build
+> next build
+
+Γû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env
+
+node.exe : ΓÜá The 
+"middleware" file 
+convention is 
+deprecated. Please use 
+"proxy" instead. Learn 
+more: https://nextjs.or
+g/docs/messages/middlew
+are-to-proxy
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (ΓÜá The "midd   
+ le...leware-to-pro    
+xy:String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 14.2s
+  Running TypeScript ...
+Failed to compile.
+
+.next/dev/types/validat
+or.ts:549:31
+Type error: Type 
+'typeof import("C:/User
+s/User/Desktop/soyol/ap
+p/api/banners/[id]/rout
+e")' does not satisfy 
+the constraint 'RouteHa
+ndlerConfig<"/api/banne
+rs/[id]">'.
+  Types of property 
+'PATCH' are 
+incompatible.
+    Type '(request: 
+NextRequest, { params 
+}: { params: { id: 
+string; }; }) => 
+Promise<NextResponse<{ 
+error: string; }> | 
+NextResponse<{ 
+success: boolean; 
+updatedCount: number; 
+}>>' is not assignable 
+to type '(request: 
+NextRequest, context: 
+{ params: Promise<{ 
+id: string; }>; }) => 
+void | Response | 
+Promise<void | 
+Response>'.
+      Types of 
+parameters '__1' and 
+'context' are 
+incompatible.
+        Type '{ 
+params: Promise<{ id: 
+string; }>; }' is not 
+assignable to type '{ 
+params: { id: string; 
+}; }'.
+          Types of 
+property 'params' are 
+incompatible.
+            Property 
+'id' is missing in 
+type 'Promise<{ id: 
+string; }>' but 
+required in type '{ 
+id: string; }'.
+
+[0m [90m 547 |[39m  
+ type __IsExpected[33m
+<[39m[33mSpecific[39
+m [36mextends[39m [3
+3mRouteHandlerConfig[3
+9m[33m<[39m[32m"/api
+/banners/[id]"[39m[33
+m>>[39m [33m=[39m 
+[33mSpecific[39m
+ [90m 548 |[39m   
+[36mconst[39m 
+handler [33m=[39m {} 
+[36mas[39m 
+[36mtypeof[39m [36mi
+mport[39m([32m"../../
+../app/api/banners/[id]
+/route.js"[39m)
+[31m[1m>[22m[39m[9
+0m 549 |[39m   type 
+__Check [33m=[39m __I
+sExpected[33m<[39m[3
+6mtypeof[39m 
+handler[33m>[39m
+ [90m     |[39m      
+                       
+  [31m[1m^[22m[39m
+ [90m 550 |[39m   
+[90m// @ts-ignore[39m
+ [90m 551 |[39m   
+type __Unused 
+[33m=[39m __Check
+ [90m 552 |[39m }[0m
+Next.js build worker 
+exited with code: 1 
+and signal: null

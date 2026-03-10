@@ -31,37 +31,24 @@ export default function CartPage() {
                 >
                     {/* Illustration Area */}
                     <motion.div
-                        animate={{ y: [0, -8, 0] }}
+                        animate={{ y: [0, -10, 0] }}
                         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                        className="relative w-[140px] h-[140px] mb-8 flex items-center justify-center"
+                        className="relative w-32 h-32 mb-10 flex items-center justify-center bg-gray-50 rounded-full"
                     >
-                        {/* Soft orange glow background */}
-                        <div className="absolute inset-0 bg-[#FF6B00]/[0.08] lg:bg-[rgba(255,107,0,0.08)] rounded-full -scale-110" />
-
-                        {/* Icon Container */}
-                        <div className="relative z-10 w-full h-full bg-white rounded-full flex flex-col items-center justify-center shadow-[0_8px_30px_rgba(0,0,0,0.04)] aspect-square border border-orange-50/50">
-                            <ShoppingBag className="w-16 h-16 text-[#FF6B00]" strokeWidth={1.2} />
-                        </div>
-
-                        {/* Floating Small Elements */}
+                        <ShoppingBag className="w-12 h-12 text-gray-300" strokeWidth={1} />
                         <motion.div
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                            className="absolute inset-[-20%] pointer-events-none"
-                        >
-                            <div className="absolute top-[15%] left-[10%] w-2 h-2 rounded-full bg-orange-200" />
-                            <div className="absolute top-[20%] right-[10%] w-3 h-3 rounded-full bg-yellow-200" />
-                            <div className="absolute bottom-[10%] left-[20%] w-2 h-2 rounded-full bg-orange-300" />
-                            <div className="absolute bottom-[20%] right-[15%] w-2.5 h-2.5 rounded-full bg-red-200" />
-                        </motion.div>
+                            animate={{ scale: [1, 1.2, 1] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                            className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full border-4 border-white"
+                        />
                     </motion.div>
 
                     {/* Text Content */}
-                    <div className="flex flex-col gap-3 mb-10 w-full">
-                        <h2 className="text-[22px] font-bold text-[#1A1A1A] leading-tight flex flex-col">
+                    <div className="flex flex-col gap-2 mb-10 w-full text-center">
+                        <h2 className="text-2xl font-black text-gray-900 tracking-tight">
                             Таны сагс хоосон байна
                         </h2>
-                        <p className="text-[14px] text-[#999999] font-normal text-center leading-relaxed">
+                        <p className="text-sm text-gray-400 font-medium">
                             Сонирхсон бараагаа сагсандаа нэмж эхлээрэй
                         </p>
                     </div>
@@ -125,22 +112,27 @@ export default function CartPage() {
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mb-8 p-6 bg-white/80 backdrop-blur-xl border border-white/20 rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] flex items-center justify-between"
+                    className="mb-10 flex items-center justify-between px-2"
                 >
-                    <div>
-                        <h1 className="text-3xl font-black text-slate-900 tracking-tighter">{t('cart', 'title')}</h1>
-                        <p className="text-[10px] font-black text-[#FF5000] uppercase tracking-[0.2em] mt-1 bg-orange-50 px-2 py-0.5 rounded-full inline-block">
-                            Нийт {items.length} бараа
-                        </p>
+                    <div className="flex items-center gap-4">
+                        <Link href="/">
+                            <motion.div
+                                whileTap={{ scale: 0.9 }}
+                                className="p-2 text-gray-400 hover:text-gray-900 transition-colors"
+                            >
+                                <ArrowLeft className="w-6 h-6" strokeWidth={1.5} />
+                            </motion.div>
+                        </Link>
+                        <div className="flex flex-col">
+                            <h1 className="text-2xl font-black text-gray-900 tracking-tight">{t('cart', 'title')}</h1>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                                <div className="w-1 h-1 rounded-full bg-orange-500" />
+                                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                                    {items.length} БАРАА
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                    <Link href="/">
-                        <motion.div
-                            whileHover={{ x: -4 }}
-                            className="p-3 bg-white rounded-2xl border border-slate-100 shadow-sm text-slate-400 hover:text-[#FF5000] transition-colors cursor-pointer"
-                        >
-                            <ArrowLeft className="w-5 h-5" />
-                        </motion.div>
-                    </Link>
                 </motion.div>
 
                 {/* Cart Sections */}

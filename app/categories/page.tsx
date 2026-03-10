@@ -1,6 +1,6 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Filter, ShoppingCart, Eye, ChevronDown, Sparkles, LayoutGrid, List } from 'lucide-react';
@@ -48,6 +48,41 @@ export default function CategoriesPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<string>('newest');
   const [scrolled, setScrolled] = useState(false);
+
+  const { scrollY } = useScroll();
+
+  // Apple-style smooth interpolations
+  const headerPadding = useTransform(scrollY, [0, 80], ['1.5rem', '0.75rem']); // p-6 to p-3 approx
+  const titleOpacity = useTransform(scrollY, [0, 60], [1, 0]);
+  const titleHeight = useTransform(scrollY, [0, 60], ['52px', '0px']);
+  const pillMarginTop = useTransform(scrollY, [0, 80], ['1rem', '0rem']); // mt-4 to mt-0
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.06,
+        delayChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants: any = {
+    hidden: { opacity: 0, y: 40, scale: 0.85, rotateX: 15 },
+    show: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      rotateX: 0,
+      transition: {
+        type: "spring",
+        stiffness: 260,
+        damping: 24,
+        mass: 1
+      }
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -284,16 +319,22 @@ export default function CategoriesPage() {
           <main className="flex-1 lg:min-w-0">
 
             {/* Header & Filters */}
-            <div className={`bg-white lg:rounded-3xl shadow-sm border-b lg:border border-gray-100 sticky top-16 lg:static z-20 transition-all duration-300 ${scrolled ? 'p-3 flex flex-col gap-3' : 'p-4 lg:p-6 mb-4 lg:mb-8'}`}>
+            <motion.div
+              style={{ padding: headerPadding, top: 'calc(56px + env(safe-area-inset-top))' }}
+              className="bg-white lg:rounded-3xl shadow-sm border-b lg:border border-gray-100 sticky z-20"
+            >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className={`transition-all duration-300 overflow-hidden ${scrolled ? 'h-0 opacity-0 mb-0' : 'h-[52px] opacity-100 mb-1 lg:h-auto lg:mb-0 lg:opacity-100'}`}>
+                <motion.div
+                  style={{ height: titleHeight, opacity: titleOpacity }}
+                  className="transition-all duration-300 overflow-hidden lg:h-auto lg:mb-0 lg:opacity-100"
+                >
                   <h1 className="text-xl lg:text-4xl font-black text-gray-900 mb-1">
                     {selectedCategory === 'all' ? 'Бүх бараа' : categories.find(c => c.id === selectedCategory)?.name}
                   </h1>
                   <p className="text-sm lg:text-base text-gray-600">
                     {sortedProducts.length} бараа олдлоо
                   </p>
-                </div>
+                </motion.div>
 
                 <div className="flex items-center gap-3 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
                   <div className="flex items-center bg-gray-50 rounded-xl p-1 border border-gray-100">
@@ -327,35 +368,54 @@ export default function CategoriesPage() {
               </div>
 
               {/* Mobile Horizontal Category Pills (Alternative to Sidebar) */}
-              <div className={`relative lg:hidden -mx-4 transition-all duration-300 ${scrolled ? 'mt-0' : 'mt-4'}`}>
+              <motion.div
+                style={{ marginTop: pillMarginTop }}
+                className="relative lg:hidden -mx-4 transition-all duration-300"
+              >
                 <div className="flex gap-2 px-4 overflow-x-auto scrollbar-hide pb-2 -mb-2">
-                  <button
+                  <motion.button
                     onClick={() => setSelectedCategory('all')}
-                    className={`flex-shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold transition-all ${selectedCategory === 'all'
-                      ? 'bg-soyol text-white shadow-md shadow-orange-200'
+                    whileTap={{ scale: 0.95 }}
+                    className={`relative flex-shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold transition-all ${selectedCategory === 'all'
+                      ? 'text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                   >
-                    Бүгд
-                  </button>
+                    {selectedCategory === 'all' && (
+                      <motion.div
+                        layoutId="activeCategory"
+                        className="absolute inset-0 bg-soyol rounded-full shadow-md shadow-orange-200"
+                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                      />
+                    )}
+                    <span className="relative z-10">Бүгд</span>
+                  </motion.button>
                   {categories.map((cat) => (
-                    <button
+                    <motion.button
                       key={cat.id}
                       onClick={() => setSelectedCategory(cat.id)}
-                      className={`flex-shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold transition-all ${selectedCategory === cat.id
-                        ? 'bg-soyol text-white shadow-md shadow-orange-200'
+                      whileTap={{ scale: 0.95 }}
+                      className={`relative flex-shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold transition-all ${selectedCategory === cat.id
+                        ? 'text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                     >
-                      {cat.name}
-                    </button>
+                      {selectedCategory === cat.id && (
+                        <motion.div
+                          layoutId="activeCategory"
+                          className="absolute inset-0 bg-soyol rounded-full shadow-md shadow-orange-200"
+                          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                        />
+                      )}
+                      <span className="relative z-10">{cat.name}</span>
+                    </motion.button>
                   ))}
                 </div>
                 {/* Fade Gradients */}
                 <div className="absolute left-0 top-0 bottom-2 w-6 bg-gradient-to-r from-white to-transparent pointer-events-none" />
                 <div className="absolute right-0 top-0 bottom-2 w-6 bg-gradient-to-l from-white to-transparent pointer-events-none" />
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
 
             {/* Product Grid */}
             <AnimatePresence mode="wait">
@@ -381,10 +441,10 @@ export default function CategoriesPage() {
               ) : (
                 <motion.div
                   key={selectedCategory + sortBy}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="show"
+                  exit="hidden"
                   className={
                     viewMode === 'grid'
                       ? "grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 px-4 lg:px-0"
@@ -392,16 +452,17 @@ export default function CategoriesPage() {
                   }
                 >
                   {sortedProducts.map((product, index) => (
-                    <DiscoveryProductCard
-                      key={product.id}
-                      product={product}
-                      index={index}
-                    />
+                    <motion.div key={product.id} variants={itemVariants}>
+                      <DiscoveryProductCard
+                        product={product}
+                        index={index}
+                        disableInitialAnimation={true}
+                      />
+                    </motion.div>
                   ))}
                 </motion.div>
               )}
             </AnimatePresence>
-
           </main>
         </div>
       </div>

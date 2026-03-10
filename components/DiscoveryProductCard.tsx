@@ -17,9 +17,15 @@ interface DiscoveryProductCardProps {
   product: Product;
   index?: number;
   showTrendingBadge?: boolean;
+  disableInitialAnimation?: boolean;
 }
 
-export default function DiscoveryProductCard({ product, index = 0, showTrendingBadge = false }: DiscoveryProductCardProps) {
+export default function DiscoveryProductCard({
+  product,
+  index = 0,
+  showTrendingBadge = false,
+  disableInitialAnimation = false
+}: DiscoveryProductCardProps) {
   const { isAuthenticated } = useAuth();
   const [isHovered, setIsHovered] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
@@ -117,16 +123,17 @@ export default function DiscoveryProductCard({ product, index = 0, showTrendingB
             sections={product.sections}
             isFeatured={product.featured}
             showTrendingBadge={showTrendingBadge}
-            className="static shadow-sm scale-95 origin-top-left"
+            className="z-10 shadow-sm scale-95 origin-top-left"
           />
           {product.stockStatus === 'in-stock' && (
-            <div className="px-2 py-1 bg-white/90 backdrop-blur-sm text-emerald-700 rounded-full flex items-center gap-1 border border-white/50 shadow-sm pointer-events-auto">
-              <span className="text-[10px] font-bold leading-none">БЭЛЭН</span>
+            <div className="px-2.5 py-1 bg-emerald-50/90 backdrop-blur-md text-emerald-700 rounded-full flex items-center gap-1.5 border border-emerald-200/50 shadow-sm pointer-events-auto">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />
+              <span className="text-[9px] font-black uppercase tracking-widest leading-none">БЭЛЭН</span>
             </div>
           )}
           {product.stockStatus === 'pre-order' && (
-            <div className="px-2 py-1 bg-white/90 backdrop-blur-sm text-zinc-800 rounded-full flex items-center gap-1 border border-white/50 shadow-sm pointer-events-auto">
-              <span className="text-[10px] font-bold leading-none">ЗАХИАЛГА</span>
+            <div className="px-2.5 py-1 bg-blue-50/90 backdrop-blur-md text-blue-700 rounded-full flex items-center gap-1.5 border border-blue-200/50 shadow-sm pointer-events-auto">
+              <span className="text-[9px] font-black uppercase tracking-widest leading-none">ЗАХИАЛГА</span>
             </div>
           )}
         </div>
@@ -196,10 +203,10 @@ export default function DiscoveryProductCard({ product, index = 0, showTrendingB
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={disableInitialAnimation ? undefined : { opacity: 0, y: 20 }}
+      whileInView={disableInitialAnimation ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-50px' }}
-      transition={{
+      transition={disableInitialAnimation ? undefined : {
         duration: 0.5,
         delay: index * 0.05,
         ease: [0.25, 0.1, 0.25, 1],

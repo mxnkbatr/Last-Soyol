@@ -61,7 +61,7 @@ export default function QuickCategoryStrip({ onStockFilterChange }: QuickCategor
         if (res.ok) {
           const data = await res.json();
           const categoriesList = data.categories || (Array.isArray(data) ? data : []);
-          
+
           if (Array.isArray(categoriesList) && categoriesList.length > 0) {
             setCategories(categoriesList.map((cat: any) => ({
               id: cat.id || cat._id,
@@ -121,10 +121,10 @@ export default function QuickCategoryStrip({ onStockFilterChange }: QuickCategor
   return (
     <section className="bg-white py-2 sticky top-[60px] z-30 shadow-sm border-b border-gray-100">
       <div className="max-w-7xl mx-auto flex flex-col gap-2">
-        
+
         {/* TOP ROW — Category icons (horizontal scroll) */}
-        <div className="flex gap-4 overflow-x-auto scrollbar-hide px-4 pb-1">
-          
+        <div className="flex gap-4 overflow-x-auto scrollbar-hide px-4 pb-1 mobile-slide">
+
           {/* 'All' Button */}
           <Link
             href="/"
@@ -133,22 +133,20 @@ export default function QuickCategoryStrip({ onStockFilterChange }: QuickCategor
           >
             <motion.div
               whileTap={{ scale: 0.95 }}
-              className={`w-[52px] h-[52px] rounded-2xl flex items-center justify-center text-2xl transition-all duration-300 ${
-                activeId === 'all' 
-                  ? 'bg-soyol/10 border border-soyol shadow-sm' 
-                  : 'bg-gray-100 border border-transparent'
-              }`}
+              className={`w-[52px] h-[52px] rounded-2xl flex items-center justify-center text-2xl transition-all duration-300 ${activeId === 'all'
+                ? 'bg-soyol/10 border border-soyol shadow-sm'
+                : 'bg-gray-100 border border-transparent'
+                }`}
             >
               {CATEGORY_EMOJIS['all']}
             </motion.div>
             <div className="flex flex-col items-center">
-              <span className={`text-[11px] font-bold text-center leading-tight ${
-                activeId === 'all' ? 'text-soyol' : 'text-gray-700'
-              }`}>
+              <span className={`text-[11px] font-bold text-center leading-tight ${activeId === 'all' ? 'text-soyol' : 'text-gray-700'
+                }`}>
                 {t('categories', 'all') || 'Бүгд'}
               </span>
               {activeId === 'all' && (
-                <motion.div 
+                <motion.div
                   layoutId="activeDot"
                   className="w-1 h-1 rounded-full bg-soyol mt-0.5"
                 />
@@ -160,29 +158,27 @@ export default function QuickCategoryStrip({ onStockFilterChange }: QuickCategor
           {categories.map((category) => {
             const isActive = activeId === category.slug;
             return (
-              <Link 
-                key={category.id} 
+              <Link
+                key={category.id}
                 href={`/category/${category.slug}`}
                 className="flex flex-col items-center gap-1 min-w-[52px] group"
               >
                 <motion.div
                   whileTap={{ scale: 0.95 }}
-                  className={`w-[52px] h-[52px] rounded-2xl flex items-center justify-center text-2xl transition-all duration-300 ${
-                    isActive 
-                      ? 'bg-soyol/10 border border-soyol shadow-sm' 
-                      : 'bg-gray-100 border border-transparent group-hover:bg-gray-200'
-                  }`}
+                  className={`w-[52px] h-[52px] rounded-2xl flex items-center justify-center text-2xl transition-all duration-300 ${isActive
+                    ? 'bg-soyol/10 border border-soyol shadow-sm'
+                    : 'bg-gray-100 border border-transparent group-hover:bg-gray-200'
+                    }`}
                 >
                   {getEmoji(category.slug)}
                 </motion.div>
                 <div className="flex flex-col items-center">
-                  <span className={`text-[11px] font-bold text-center leading-tight px-1 line-clamp-1 ${
-                    isActive ? 'text-soyol' : 'text-gray-700'
-                  }`}>
+                  <span className={`text-[11px] font-bold text-center leading-tight px-1 line-clamp-1 ${isActive ? 'text-soyol' : 'text-gray-700'
+                    }`}>
                     {category.name}
                   </span>
                   {isActive && (
-                    <motion.div 
+                    <motion.div
                       layoutId="activeDot"
                       className="w-1 h-1 rounded-full bg-soyol mt-0.5"
                     />
@@ -198,11 +194,10 @@ export default function QuickCategoryStrip({ onStockFilterChange }: QuickCategor
           <motion.button
             whileTap={{ scale: 0.98 }}
             onClick={() => handleStockFilterClick('in-stock')}
-            className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition-all border flex items-center justify-center gap-2 ${
-              activeStockFilter === 'in-stock'
-                ? 'bg-green-50 border-green-500 text-green-700 shadow-sm'
-                : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
-            }`}
+            className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition-all border flex items-center justify-center gap-2 ${activeStockFilter === 'in-stock'
+              ? 'bg-green-50 border-green-500 text-green-700 shadow-sm'
+              : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
+              }`}
           >
             <span className="text-base">📦</span>
             Бэлэн бараа
@@ -211,11 +206,10 @@ export default function QuickCategoryStrip({ onStockFilterChange }: QuickCategor
           <motion.button
             whileTap={{ scale: 0.98 }}
             onClick={() => handleStockFilterClick('pre-order')}
-            className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition-all border flex items-center justify-center gap-2 ${
-              activeStockFilter === 'pre-order'
-                ? 'bg-orange-50 border-orange-500 text-orange-700 shadow-sm'
-                : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
-            }`}
+            className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition-all border flex items-center justify-center gap-2 ${activeStockFilter === 'pre-order'
+              ? 'bg-orange-50 border-orange-500 text-orange-700 shadow-sm'
+              : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
+              }`}
           >
             <span className="text-base">✈️</span>
             Захиалгаар
