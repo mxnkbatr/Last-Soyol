@@ -56,8 +56,20 @@ function useAntigravity<T extends HTMLElement = HTMLDivElement>(
   const target = useRef({ x: 0, y: 0 });
   const isHovered = useRef(false);
   const rafId = useRef<number>();
+  const isEnabled = useRef(true);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isCoarse = window.matchMedia('(pointer: coarse)').matches;
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (isCoarse || prefersReducedMotion) {
+        isEnabled.current = false;
+      }
+    }
+  }, []);
 
   const update = useCallback(() => {
+    if (!isEnabled.current) return;
     if (!isHovered.current) {
       target.current.x *= decay;
       target.current.y *= decay;
@@ -76,7 +88,7 @@ function useAntigravity<T extends HTMLElement = HTMLDivElement>(
   }, [decay, lerpAmt]);
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!ref.current) return;
+    if (!isEnabled.current || !ref.current) return;
     const rect = ref.current.getBoundingClientRect();
     const dx = Math.max(-1, Math.min(1, (e.clientX - rect.left - rect.width / 2) / (rect.width / 2)));
     const dy = Math.max(-1, Math.min(1, (e.clientY - rect.top - rect.height / 2) / (rect.height / 2)));
@@ -85,12 +97,14 @@ function useAntigravity<T extends HTMLElement = HTMLDivElement>(
   };
 
   const handleMouseEnter = () => {
+    if (!isEnabled.current) return;
     isHovered.current = true;
     if (rafId.current) cancelAnimationFrame(rafId.current);
     rafId.current = requestAnimationFrame(update);
   };
 
   const handleMouseLeave = () => {
+    if (!isEnabled.current) return;
     isHovered.current = false;
     target.current.x = 0; target.current.y = 0;
   };
@@ -105,8 +119,20 @@ function useMagnetic(radius = 80, lerpAmt = 0.12, decay = 0.72) {
   const target = useRef({ x: 0, y: 0 });
   const isHovered = useRef(false);
   const rafId = useRef<number>();
+  const isEnabled = useRef(true);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isCoarse = window.matchMedia('(pointer: coarse)').matches;
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (isCoarse || prefersReducedMotion) {
+        isEnabled.current = false;
+      }
+    }
+  }, []);
 
   const update = useCallback(() => {
+    if (!isEnabled.current) return;
     if (!isHovered.current) { target.current.x *= decay; target.current.y *= decay; }
     position.current.x += (target.current.x - position.current.x) * lerpAmt;
     position.current.y += (target.current.y - position.current.y) * lerpAmt;
@@ -121,7 +147,7 @@ function useMagnetic(radius = 80, lerpAmt = 0.12, decay = 0.72) {
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
-      if (!ref.current) return;
+      if (!isEnabled.current || !ref.current) return;
       const rect = ref.current.getBoundingClientRect();
       const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
       const dist = Math.sqrt((e.clientX - cx) ** 2 + (e.clientY - cy) ** 2);
@@ -141,17 +167,29 @@ function useMagnetic(radius = 80, lerpAmt = 0.12, decay = 0.72) {
   return { ref };
 }
 
-function useParallaxTilt(maxRotate = 4, perspective = 800) {
+function useParallaxTilt(maxRotate = 4, perspective = 800, lerpAmt = 0.1, decay = 0.8) {
   const ref = useRef<HTMLDivElement>(null);
   const position = useRef({ rx: 0, ry: 0 });
   const target = useRef({ rx: 0, ry: 0 });
   const isHovered = useRef(false);
   const rafId = useRef<number>();
+  const isEnabled = useRef(true);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isCoarse = window.matchMedia('(pointer: coarse)').matches;
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (isCoarse || prefersReducedMotion) {
+        isEnabled.current = false;
+      }
+    }
+  }, []);
 
   const update = useCallback(() => {
-    if (!isHovered.current) { target.current.rx *= 0.8; target.current.ry *= 0.8; }
-    position.current.rx += (target.current.rx - position.current.rx) * 0.1;
-    position.current.ry += (target.current.ry - position.current.ry) * 0.1;
+    if (!isEnabled.current) return;
+    if (!isHovered.current) { target.current.rx *= decay; target.current.ry *= decay; }
+    position.current.rx += (target.current.rx - position.current.rx) * lerpAmt;
+    position.current.ry += (target.current.ry - position.current.ry) * lerpAmt;
     if (ref.current) ref.current.style.transform = `perspective(${perspective}px) rotateX(${position.current.rx}deg) rotateY(${position.current.ry}deg)`;
     if (!isHovered.current && Math.abs(position.current.rx) < 0.01 && Math.abs(position.current.ry) < 0.01) {
       position.current.rx = 0; position.current.ry = 0;
@@ -159,10 +197,10 @@ function useParallaxTilt(maxRotate = 4, perspective = 800) {
       return;
     }
     rafId.current = requestAnimationFrame(update);
-  }, [perspective]);
+  }, [perspective, lerpAmt, decay]);
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!ref.current) return;
+    if (!isEnabled.current || !ref.current) return;
     const rect = ref.current.getBoundingClientRect();
     const dx = Math.max(-1, Math.min(1, (e.clientX - rect.left - rect.width / 2) / (rect.width / 2)));
     const dy = Math.max(-1, Math.min(1, (e.clientY - rect.top - rect.height / 2) / (rect.height / 2)));
@@ -171,15 +209,18 @@ function useParallaxTilt(maxRotate = 4, perspective = 800) {
   };
 
   const handleMouseEnter = () => {
+    if (!isEnabled.current) return;
     isHovered.current = true;
     if (rafId.current) cancelAnimationFrame(rafId.current);
     rafId.current = requestAnimationFrame(update);
   };
 
   const handleMouseLeave = () => {
+    if (!isEnabled.current) return;
     isHovered.current = false; target.current.rx = 0; target.current.ry = 0;
   };
 
+  useEffect(() => () => { if (rafId.current) cancelAnimationFrame(rafId.current); }, []);
   return { ref, handleMouseMove, handleMouseEnter, handleMouseLeave };
 }
 
@@ -189,26 +230,67 @@ function useFloatingOrb(lerpAmt = 0.035) {
   const position = useRef({ x: 0, y: 0 });
   const target = useRef({ x: 0, y: 0 });
   const rafId = useRef<number>();
+  const isEnabled = useRef(true);
+  const isActive = useRef(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isCoarse = window.matchMedia('(pointer: coarse)').matches;
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (isCoarse || prefersReducedMotion) {
+        isEnabled.current = false;
+      }
+    }
+  }, []);
 
   const update = useCallback(() => {
+    if (!isEnabled.current) return;
+
+    // Smoothly return to center when not active
+    if (!isActive.current) {
+      target.current.x *= 0.9;
+      target.current.y *= 0.9;
+    }
+
     position.current.x += (target.current.x - position.current.x) * lerpAmt;
     position.current.y += (target.current.y - position.current.y) * lerpAmt;
-    if (ref.current) ref.current.style.transform = `translate3d(${position.current.x}px,${position.current.y}px,0)`;
+
+    if (ref.current) {
+      ref.current.style.transform = `translate3d(${position.current.x}px,${position.current.y}px,0)`;
+    }
+
+    if (!isActive.current && Math.abs(position.current.x) < 0.5 && Math.abs(position.current.y) < 0.5) {
+      if (ref.current) ref.current.style.transform = 'translate3d(0,0,0)';
+      return;
+    }
+
     rafId.current = requestAnimationFrame(update);
   }, [lerpAmt]);
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
-      if (!containerRef.current) return;
+      if (!isEnabled.current || !containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
-      if (e.clientX < rect.left - 200 || e.clientX > rect.right + 200) return;
-      const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
-      const maxX = rect.width / 2 - 90, maxY = rect.height / 2 - 90;
-      target.current.x = Math.max(-maxX, Math.min(maxX, e.clientX - cx));
-      target.current.y = Math.max(-maxY, Math.min(maxY, e.clientY - cy));
+
+      // Check if mouse is near or inside container
+      if (e.clientX >= rect.left - 200 && e.clientX <= rect.right + 200 &&
+        e.clientY >= rect.top - 200 && e.clientY <= rect.bottom + 200) {
+        if (!isActive.current) {
+          isActive.current = true;
+          if (rafId.current) cancelAnimationFrame(rafId.current);
+          rafId.current = requestAnimationFrame(update);
+        }
+        const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+        const maxX = rect.width / 2 - 90, maxY = rect.height / 2 - 90;
+        target.current.x = Math.max(-maxX, Math.min(maxX, e.clientX - cx));
+        target.current.y = Math.max(-maxY, Math.min(maxY, e.clientY - cy));
+      } else if (isActive.current) {
+        isActive.current = false;
+        target.current.x = 0;
+        target.current.y = 0;
+      }
     };
     window.addEventListener('mousemove', onMove);
-    rafId.current = requestAnimationFrame(update);
     return () => { window.removeEventListener('mousemove', onMove); if (rafId.current) cancelAnimationFrame(rafId.current); };
   }, [update]);
 
@@ -225,6 +307,7 @@ export default function ProductDetailClient({ product }: { product: ProductDetai
   const [quantity, setQuantity] = useState(1);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [showLightbox, setShowLightbox] = useState(false);
+  const [deliveryEstimate, setDeliveryEstimate] = useState<string | null>(null);
 
   const router = useRouter();
   const { addItem, toggleAllSelection } = useCartStore();
@@ -236,6 +319,26 @@ export default function ProductDetailClient({ product }: { product: ProductDetai
     const unsub = scrollY.on('change', (y) => setIsScrolled(y > 300));
     return () => unsub();
   }, [scrollY]);
+
+  useEffect(() => {
+    if (product.stockStatus !== 'pre-order') return;
+    fetch('/api/delivery', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productName: product.name, stockStatus: product.stockStatus })
+    })
+      .then(r => r.json())
+      .then(data => setDeliveryEstimate(data.estimation || null))
+      .catch(() => null);
+  }, [product.id, product.stockStatus]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    fetch(`/api/user/wishlist?productId=${product.id}`)
+      .then(r => r.json())
+      .then(data => setIsWishlisted(!!data.isWishlisted))
+      .catch(() => null);
+  }, [product.id, isAuthenticated]);
 
   const images: string[] = product.images?.length
     ? product.images
@@ -252,10 +355,21 @@ export default function ProductDetailClient({ product }: { product: ProductDetai
     : 0;
 
   // ── Handlers (all unchanged) ───────────────────────────────────────────────
-  const handleWishlist = () => {
+  const handleWishlist = async () => {
     if (!isAuthenticated) return toast.error('Нэвтрэх шаардлагатай', { style: { borderRadius: '16px' } });
-    setIsWishlisted(!isWishlisted);
-    toast.success(isWishlisted ? 'Хүслээс хассан' : 'Хүсэлд нэмсэн');
+    const next = !isWishlisted;
+    setIsWishlisted(next); // optimistic
+    try {
+      await fetch('/api/user/wishlist', {
+        method: next ? 'POST' : 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: product.id }),
+      });
+      toast.success(next ? 'Хүсэлд нэмсэн' : 'Хүслээс хассан');
+    } catch {
+      setIsWishlisted(!next); // rollback
+      toast.error('Алдаа гарлаа');
+    }
   };
 
   const handleShare = async () => {
@@ -495,7 +609,7 @@ export default function ProductDetailClient({ product }: { product: ProductDetai
               {/* Trust grid */}
               <div className="hidden md:grid grid-cols-3 gap-3 mt-2">
                 {[
-                  { icon: Truck, color: 'blue', bg: 'bg-blue-50', text: 'text-blue-500', label: 'Шуурхай хүргэлт', sub: product.delivery || 'Хот дотор үнэгүй' },
+                  { icon: Truck, color: 'blue', bg: 'bg-blue-50', text: 'text-blue-500', label: 'Шуурхай хүргэлт', sub: deliveryEstimate || product.delivery || 'Хот дотор үнэгүй' },
                   { icon: ShieldCheck, color: 'emerald', bg: 'bg-emerald-50', text: 'text-emerald-500', label: 'Баталгаат хугацаа', sub: '100% Оригинал' },
                   { icon: RotateCcw, color: 'purple', bg: 'bg-purple-50', text: 'text-purple-500', label: 'Буцаалт хэвийн', sub: '7 хоногт буцаах' },
                 ].map(({ icon: Icon, bg, text, label, sub }) => (
@@ -723,6 +837,31 @@ export default function ProductDetailClient({ product }: { product: ProductDetai
               onClick={e => e.stopPropagation()}
             >
               <Image src={images[activeImageIndex]} alt="" fill className="object-contain" priority />
+              {images.length > 1 && (
+                <>
+                  <button
+                    onClick={e => { e.stopPropagation(); setActiveImageIndex(p => Math.max(0, p - 1)); }}
+                    disabled={activeImageIndex === 0}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors disabled:opacity-20"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+                  <button
+                    onClick={e => { e.stopPropagation(); setActiveImageIndex(p => Math.min(images.length - 1, p + 1)); }}
+                    disabled={activeImageIndex === images.length - 1}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors disabled:opacity-20"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+                    {images.map((_, i) => (
+                      <button key={i} onClick={e => { e.stopPropagation(); setActiveImageIndex(i); }}
+                        className={`h-1.5 rounded-full transition-all ${i === activeImageIndex ? 'w-6 bg-white' : 'w-1.5 bg-white/40'}`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
             </motion.div>
           </motion.div>
         )}
@@ -782,8 +921,28 @@ function ProductInfoTabs({ product }: { product: any }) {
   const tabs = [
     { id: 'description', label: 'Тайлбар' },
     { id: 'specs', label: 'Үзүүлэлт' },
+    { id: 'reviews', label: `Үнэлгээ${product.reviewCount ? ` (${product.reviewCount})` : ''}` },
   ];
   const [activeTab, setActiveTab] = useState('description');
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewStats, setReviewStats] = useState<{ averageRating: number; distribution: Record<number, number>; total: number } | null>(null);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+
+  useEffect(() => {
+    if (activeTab !== 'reviews') return;
+    setReviewsLoading(true);
+    fetch(`/api/reviews?productId=${product.id}&limit=5`)
+      .then(r => r.json())
+      .then(data => {
+        setReviews(data.reviews || []);
+        setReviewStats({
+          averageRating: data.averageRating || 0,
+          distribution: data.distribution || {},
+          total: data.total || 0,
+        });
+      })
+      .finally(() => setReviewsLoading(false));
+  }, [activeTab, product.id]);
 
   return (
     <div className="bg-white rounded-3xl p-4 md:p-10 shadow-sm border border-slate-100 font-dm">
@@ -846,17 +1005,26 @@ function ProductInfoTabs({ product }: { product: any }) {
             <div className="flex flex-col lg:flex-row gap-12 py-4">
               <div className="shrink-0 text-center lg:text-left">
                 <div className="font-sora font-black text-6xl text-slate-900 tracking-tighter leading-none mb-3">
-                  {product.rating ? Number(product.rating).toFixed(1) : '0.0'}
+                  {reviewStats?.averageRating.toFixed(1) || '0.0'}
                 </div>
                 <div className="flex justify-center lg:justify-start gap-1 text-amber-500 mb-2">
-                  {[1, 2, 3, 4, 5].map(s => <Star key={s} className="w-5 h-5 fill-current" />)}
+                  {[1, 2, 3, 4, 5].map(s => (
+                    <Star
+                      key={s}
+                      className={`w-5 h-5 ${s <= Math.round(reviewStats?.averageRating || 0) ? 'fill-current' : 'text-slate-200 fill-slate-200'}`}
+                    />
+                  ))}
                 </div>
-                <p className="text-sm font-bold text-slate-400">Нийт {product.reviewCount || 0} үнэлгээ</p>
+                <p className="text-sm font-bold text-slate-400">Нийт {reviewStats?.total || 0} үнэлгээ</p>
               </div>
 
               <div className="flex-1 space-y-3">
-                {[5, 4, 3, 2, 1].map((star, idx) => {
-                  const widthPct = product.reviewCount ? Math.floor(Math.random() * 80 + 10) : 0;
+                {reviewsLoading && <div className="py-8 text-center text-slate-400 text-sm">Уншиж байна...</div>}
+
+                {!reviewsLoading && [5, 4, 3, 2, 1].map((star, idx) => {
+                  const widthPct = reviewStats?.total
+                    ? Math.round(((reviewStats.distribution[star] || 0) / reviewStats.total) * 100)
+                    : 0;
                   return (
                     <div key={star} className="flex items-center gap-4">
                       <span className="font-bold text-slate-600 w-3 text-sm">{star}</span>
@@ -873,6 +1041,33 @@ function ProductInfoTabs({ product }: { product: any }) {
                     </div>
                   );
                 })}
+
+                {/* Review List */}
+                {!reviewsLoading && reviews.length > 0 && (
+                  <div className="mt-8 space-y-5 border-t border-slate-100 pt-6">
+                    {reviews.map((r: any) => (
+                      <div key={r._id} className="flex gap-4">
+                        <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center shrink-0 font-bold text-slate-500 text-sm">
+                          {r.userName?.[0] || 'А'}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-bold text-slate-900 text-sm">{r.userName || 'Нэргүй'}</span>
+                            {r.verified && <span className="text-[10px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-bold">✓ Баталгаат</span>}
+                          </div>
+                          <div className="flex gap-0.5 mb-2">
+                            {[1, 2, 3, 4, 5].map(s => (
+                              <Star key={s} className={`w-3.5 h-3.5 ${s <= r.rating ? 'fill-amber-400 text-amber-400' : 'fill-slate-200 text-slate-200'}`} />
+                            ))}
+                          </div>
+                          {r.comment && <p className="text-sm text-slate-600 leading-relaxed">{r.comment}</p>}
+                          <p className="text-xs text-slate-400 mt-2">{new Date(r.createdAt).toLocaleDateString('mn-MN')}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <div className="pt-6">
                   <button className="px-6 py-3 rounded-2xl bg-slate-900 text-white font-bold hover:bg-slate-800 transition-colors text-sm">
                     Үнэлгээ бичих

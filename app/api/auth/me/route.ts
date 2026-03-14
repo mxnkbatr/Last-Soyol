@@ -4,7 +4,8 @@ import { jwtVerify } from 'jose';
 import { getCollection } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret-key-change-me');
+if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET env variable is not set');
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
 export async function GET(req: Request) {
   try {
@@ -17,13 +18,15 @@ export async function GET(req: Request) {
 
     const { payload } = await jwtVerify(token, JWT_SECRET);
 
-    if (!payload.userId) {
+    const userId = (payload.sub || payload.userId) as string | undefined;
+
+    if (!userId) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
     const usersCollection = await getCollection('users');
     const user = await usersCollection.findOneAndUpdate(
-      { _id: new ObjectId(payload.userId as string) },
+      { _id: new ObjectId(userId) },
       { $set: { lastSeen: new Date() } },
       { returnDocument: 'after' }
     );

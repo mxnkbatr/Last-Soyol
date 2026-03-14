@@ -17,12 +17,15 @@ const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_RE
 const ratelimit = redis
   ? new Ratelimit({
     redis: redis,
-    limiter: Ratelimit.slidingWindow(30, '60 s'), // Increased limit for dev
+    limiter: Ratelimit.slidingWindow(100, '60 s'), // Increased limit for dev
     analytics: true,
   })
   : null;
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret-key-change-me');
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET env variable is not set');
+}
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
 // Add paths that require authentication
 const protectedRoutes = [
@@ -48,7 +51,6 @@ export async function middleware(req: NextRequest) {
 
   // 1. Rate Limiting for API routes
   if (pathname.startsWith('/api/')) {
-    console.log('[Middleware] API Request:', pathname);
     if (ratelimit) {
       try {
         const { success, limit, reset, remaining } = await ratelimit.limit(`ratelimit_${ip}`);
@@ -110,6 +112,6 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|public|api/auth).*)',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };

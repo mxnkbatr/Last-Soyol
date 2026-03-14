@@ -5,6 +5,34 @@ import ProductDetailClient from '@/components/ProductDetailClient';
 
 export const revalidate = 60;
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  try {
+    const products = await getCollection('products');
+    const product = await products.findOne({ _id: new ObjectId(id) });
+    if (!product) return {};
+    return {
+      title: product.name,
+      description: product.description || product.name,
+      openGraph: {
+        title: product.name,
+        description: product.description || product.name,
+        images: product.images?.[0]
+          ? [{ url: product.images[0] }]
+          : product.image
+            ? [{ url: product.image }]
+            : [],
+      },
+    };
+  } catch {
+    return {};
+  }
+}
+
 export default async function ProductDetailPage({
   params,
 }: {
@@ -46,13 +74,24 @@ export default async function ProductDetailPage({
       name: product.name,
       description: product.description,
       price: product.price,
-      image: product.image,
+      originalPrice: product.originalPrice,
+      discountPercent: product.discountPercent,
+      image: product.image || null,
+      images: product.images || [],
       category: product.category,
-      stockStatus: product.stockStatus || product.stock_status || 'in-stock',
+      stockStatus: product.stockStatus || 'in-stock',
       inventory: product.inventory ?? 0,
+      brand: product.brand || undefined,
+      model: product.model || undefined,
+      delivery: product.delivery || undefined,
+      paymentMethods: product.paymentMethods || undefined,
+      sections: product.sections || [],
+      attributes: product.attributes || {},
+      wholesale: product.wholesale || false,
+      featured: product.featured || false,
       createdAt: product.createdAt ? new Date(product.createdAt).toISOString() : new Date().toISOString(),
       updatedAt: product.updatedAt ? new Date(product.updatedAt).toISOString() : new Date().toISOString(),
-      rating: 4.5,
+      rating: product.rating || 0,
       relatedProducts: mappedRelatedProducts,
     };
 

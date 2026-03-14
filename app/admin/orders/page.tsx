@@ -33,10 +33,15 @@ interface Order {
     district: string;
     notes?: string;
     items: OrderItem[];
+    total?: number;
     totalPrice: number;
-    status: 'pending' | 'confirmed' | 'delivered';
+    status: 'pending' | 'confirmed' | 'delivered' | 'cancelled';
     createdAt: string;
     deliveryEstimate?: string;
+    shipping?: {
+        fullName: string;
+        phone: string;
+    };
 }
 
 type OrderStatus = Order['status'];
@@ -46,7 +51,8 @@ export default function AdminOrdersPage() {
     const orders: Order[] = data?.orders || [];
     const loading = !data && !error;
 
-    const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'confirmed' | 'delivered'>('all');
+    const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'confirmed' | 'delivered' | 'cancelled'>('all');
+    const [searchTerm, setSearchTerm] = useState('');
     const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
     const [quickUpdating, setQuickUpdating] = useState<string | null>(null);
 
@@ -59,9 +65,19 @@ export default function AdminOrdersPage() {
     const [updating, setUpdating] = useState(false);
 
     const filteredOrders = useMemo(() => {
-        return orders.filter(o => activeTab === 'all' || o.status === activeTab)
+        return orders
+            .filter(o => activeTab === 'all' || o.status === activeTab)
+            .filter(o => {
+                if (!searchTerm) return true;
+                const s = searchTerm.toLowerCase();
+                return (
+                    o._id.toLowerCase().includes(s) ||
+                    (o.shipping?.fullName || o.fullName || '').toLowerCase().includes(s) ||
+                    (o.shipping?.phone || o.phone || '').includes(s)
+                );
+            })
             .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }, [orders, activeTab]);
+    }, [orders, activeTab, searchTerm]);
 
     const selectedOrder = useMemo(() => {
         return orders.find(o => o._id === selectedOrderId) || null;
@@ -72,6 +88,7 @@ export default function AdminOrdersPage() {
         pending: orders.filter(o => o.status === 'pending').length,
         confirmed: orders.filter(o => o.status === 'confirmed').length,
         delivered: orders.filter(o => o.status === 'delivered').length,
+        cancelled: orders.filter(o => o.status === 'cancelled').length,
     }), [orders]);
 
     // Keyboard navigation
@@ -197,6 +214,7 @@ export default function AdminOrdersPage() {
             case 'pending': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
             case 'confirmed': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
             case 'delivered': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+            case 'cancelled': return 'bg-red-500/10 text-red-400 border-red-500/20';
         }
     };
 
@@ -205,6 +223,7 @@ export default function AdminOrdersPage() {
             case 'pending': return 'Шинэ';
             case 'confirmed': return 'Баталгаажсан';
             case 'delivered': return 'Хүргэгдсэн';
+            case 'cancelled': return 'Цуцлагдсан';
         }
     };
 
@@ -221,23 +240,40 @@ export default function AdminOrdersPage() {
                         <p className="text-xs text-slate-400 mt-1">Төлөв өөрчлөх болон дэлгэрэнгүй харах</p>
                     </div>
 
-                    <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
-                        {(['all', 'pending', 'confirmed', 'delivered'] as const).map((status) => (
-                            <button
-                                key={status}
-                                onClick={() => setActiveTab(status)}
-                                className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap border ${activeTab === status
-                                    ? 'bg-amber-500/20 text-amber-500 border-amber-500/50 shadow-lg shadow-amber-500/10'
-                                    : 'bg-slate-900 text-slate-400 border-transparent hover:bg-slate-800 hover:text-white'
-                                    }`}
-                            >
-                                {status === 'all' ? 'Бүгд' : getStatusLabel(status as OrderStatus)}
-                                <span className={`px-1.5 py-0.5 rounded-md text-[10px] ${activeTab === status ? 'bg-amber-500/30 text-amber-300' : 'bg-slate-800 text-slate-500'
-                                    }`}>
-                                    {counts[status]}
-                                </span>
-                            </button>
-                        ))}
+                    <div className="flex flex-col gap-4">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <input
+                                type="text"
+                                placeholder="Нэр, утас, захиалгын ID..."
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                                className="w-64 pl-9 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-all"
+                            />
+                        </div>
+
+                        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                            {(['all', 'pending', 'confirmed', 'delivered', 'cancelled'] as const).map((status) => (
+                                <button
+                                    key={status}
+                                    onClick={() => setActiveTab(status)}
+                                    className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap border ${activeTab === status
+                                        ? status === 'cancelled'
+                                            ? 'bg-red-500/20 text-red-400 border-red-500/50 shadow-lg shadow-red-500/10'
+                                            : 'bg-amber-500/20 text-amber-500 border-amber-500/50 shadow-lg shadow-amber-500/10'
+                                        : 'bg-slate-900 text-slate-400 border-transparent hover:bg-slate-800 hover:text-white'
+                                        }`}
+                                >
+                                    {status === 'all' ? 'Бүгд' : status === 'cancelled' ? 'Цуцлагдсан' : getStatusLabel(status as 'pending' | 'confirmed' | 'delivered')}
+                                    <span className={`px-1.5 py-0.5 rounded-md text-[10px] ${activeTab === status
+                                        ? status === 'cancelled' ? 'bg-red-500/30 text-red-300' : 'bg-amber-500/30 text-amber-300'
+                                        : 'bg-slate-800 text-slate-500'
+                                        }`}>
+                                        {counts[status]}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
@@ -342,7 +378,7 @@ export default function AdminOrdersPage() {
                                                         </span>
                                                     </td>
                                                     <td className="p-4 font-black text-amber-500 text-sm">
-                                                        {formatPrice(order.totalPrice)}
+                                                        {formatPrice(order.total || order.totalPrice || 0)}
                                                     </td>
                                                     <td className="p-4 text-right">
                                                         <div className="flex items-center justify-end gap-2" onClick={e => e.stopPropagation()}>
@@ -364,6 +400,8 @@ export default function AdminOrdersPage() {
                                                                     {quickUpdating === order._id ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Хүргэх'}
                                                                 </button>
                                                             )}
+                                                            {order.status === 'delivered' && <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/20">Хүргэгдсэн</span>}
+                                                            {order.status === 'cancelled' && <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-red-500/20 text-red-400 border border-red-500/20">Цуцлагдсан</span>}
                                                             <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-slate-300 transition-colors ml-2" />
                                                         </div>
                                                     </td>
@@ -465,10 +503,10 @@ export default function AdminOrdersPage() {
                                     <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 divide-y divide-slate-800">
                                         <div className="pb-3 flex gap-4">
                                             <div className="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0">
-                                                <span className="text-amber-500 font-bold">{selectedOrder.fullName.charAt(0)}</span>
+                                                <span className="text-amber-500 font-bold">{(selectedOrder.fullName || 'З').charAt(0)}</span>
                                             </div>
                                             <div>
-                                                <p className="font-bold text-white">{selectedOrder.fullName}</p>
+                                                <p className="font-bold text-white">{selectedOrder.fullName || 'Зочин'}</p>
                                                 <p className="text-sm font-mono text-slate-400 mt-0.5">{selectedOrder.phone}</p>
                                             </div>
                                         </div>
@@ -498,7 +536,7 @@ export default function AdminOrdersPage() {
                                         {selectedOrder.items.map((item, idx) => (
                                             <div key={idx} className="flex gap-4 p-3 rounded-xl bg-slate-950 border border-slate-800">
                                                 <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-slate-900 shrink-0">
-                                                    <Image src={item.image || '/soyol-logo.png'} alt={item.name} fill className="object-contain p-1" />
+                                                    <Image src={item.image || '/soyol-logo.png'} alt={item.name || 'Бараа'} fill className="object-contain p-1" />
                                                 </div>
                                                 <div className="flex-1 min-w-0 flex flex-col justify-center">
                                                     <p className="text-sm font-bold text-white line-clamp-1 mb-1">{item.name}</p>
@@ -521,7 +559,7 @@ export default function AdminOrdersPage() {
                             <div className="p-6 border-t border-slate-800 bg-slate-900 shrink-0 flex items-center justify-between gap-4">
                                 <div>
                                     <p className="text-[10px] font-bold text-slate-500 uppercase">Нийт төлбөр</p>
-                                    <p className="text-xl font-black text-white">{formatPrice(selectedOrder.totalPrice)}</p>
+                                    <p className="text-xl font-black text-white">{formatPrice(selectedOrder.total || selectedOrder.totalPrice || 0)}</p>
                                 </div>
 
                                 <button

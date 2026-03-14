@@ -8,12 +8,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import useSWR from 'swr';
 import { formatPrice } from '@/lib/utils';
 
-const TABS = ['Бүгд', 'Хүлээгдэж буй', 'Хүргэлтэнд', 'Дууссан'];
+const TABS = ['Бүгд', 'Хүлээгдэж буй', 'Баталгаажсан', 'Хүргэлтэнд', 'Дууссан'];
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any; bg: string }> = {
   pending: { label: 'Хүлээгдэж буй', color: 'text-orange-600', bg: 'bg-orange-50', icon: Clock },
+  confirmed: { label: 'Баталгаажсан', color: 'text-blue-600', bg: 'bg-blue-50', icon: Package },
   processing: { label: 'Боловсруулагдаж буй', color: 'text-blue-600', bg: 'bg-blue-50', icon: Package },
   shipped: { label: 'Хүргэлтэнд', color: 'text-blue-600', bg: 'bg-blue-50', icon: Truck },
   delivered: { label: 'Хүргэгдсэн', color: 'text-green-600', bg: 'bg-green-50', icon: CheckCircle2 },
@@ -29,6 +30,7 @@ export default function MyOrdersPage() {
   const filteredOrders = orders.filter((order: any) => {
     if (activeTab === 'Бүгд') return true;
     if (activeTab === 'Хүлээгдэж буй') return order.status === 'pending';
+    if (activeTab === 'Баталгаажсан') return order.status === 'confirmed';
     if (activeTab === 'Хүргэлтэнд') return order.status === 'processing' || order.status === 'shipped';
     if (activeTab === 'Дууссан') return order.status === 'delivered' || order.status === 'cancelled';
     return true;
@@ -144,7 +146,7 @@ export default function MyOrdersPage() {
                           {remainingItems > 0 && <span className="text-slate-400 font-medium text-xs ml-1">гэх мэт {remainingItems + 1} бараа</span>}
                         </h3>
                         <p className="text-[14px] text-slate-500 font-bold">
-                          {formatPrice(order.total || firstItem.price || 0)}
+                          {formatPrice(order.total || order.totalPrice || firstItem.price || 0)}
                         </p>
                       </div>
                     </Link>
@@ -154,7 +156,7 @@ export default function MyOrdersPage() {
                       <div className="flex flex-col">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Нийт дүн</span>
                         <span className="text-[18px] font-black text-[#FF5000]">
-                          {formatPrice(order.total || 0)}
+                          {formatPrice(order.total || order.totalPrice || 0)}
                         </span>
                       </div>
                       <Link

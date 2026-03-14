@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCollection } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { z } from 'zod';
+import { auth } from '@/lib/auth';
 
 const CheckoutSchema = z.object({
   items: z.array(z.object({
     id: z.string(),
-    quantity: z.number().min(1)
-  })),
+    quantity: z.number().min(1).max(99)
+  })).min(1).max(20),
   fullName: z.string().min(2),
   phone: z.string().min(8),
   address: z.string().min(5),
@@ -18,6 +19,7 @@ const CheckoutSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    const { userId } = await auth();
     const body = await request.json();
 
     // 1. Validation
@@ -87,6 +89,7 @@ export async function POST(request: NextRequest) {
         // 3. Create Order
         const newOrder = {
           ...userDetails,
+          userId: userId || 'guest',
           items: orderItems,
           totalPrice,
           status: 'pending',
@@ -120,7 +123,9 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('[Checkout API] Error:', error);
     return NextResponse.json({
-      error: error.message || 'Internal Server Error'
+      error: error.message?.includes('stock') || error.message?.includes('бараа')
+        ? error.message
+        : 'Захиалга үүсгэхэд алдаа гарлаа'
     }, { status: 500 });
   }
 }

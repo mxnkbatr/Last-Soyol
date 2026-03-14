@@ -5,7 +5,8 @@ import { getCollection } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { Address, User } from '@/models/User';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret-key-change-me');
+if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET env variable is not set');
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
 async function getUser(req: Request) {
     const cookieStore = await cookies();
@@ -15,8 +16,9 @@ async function getUser(req: Request) {
 
     try {
         const { payload } = await jwtVerify(token, JWT_SECRET);
-        if (!payload.userId) return null;
-        return payload.userId as string;
+        const userId = (payload.sub || payload.userId) as string | undefined;
+        if (!userId) return null;
+        return userId;
     } catch {
         return null;
     }
@@ -39,7 +41,7 @@ export async function POST(req: Request) {
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const data = await req.json();
-    
+
     // Basic validation
     if (!data.city || !data.district || !data.khoroo || !data.street) {
         return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });

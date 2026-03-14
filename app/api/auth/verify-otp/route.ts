@@ -4,7 +4,8 @@ import { verifyOtp } from '@/lib/twilio';
 import { SignJWT } from 'jose';
 import { cookies } from 'next/headers';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret-key-change-me');
+if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET env variable is not set');
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
 export async function POST(req: Request) {
   try {
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
       }
 
       // Mark verified
-      await otpCollection.updateOne({ _id: otpRecord._id }, { $set: { verified: true } });
+      await otpCollection.deleteOne({ _id: otpRecord._id });
       isVerified = true;
     } else {
       // Twilio API Error

@@ -35,7 +35,10 @@ let currentStorage: Storage | undefined =
 
 const adaptiveStorage: StateStorage = {
   getItem: (name) => currentStorage?.getItem(name) ?? null,
-  setItem: (name, value) => currentStorage?.setItem(name, value),
+  // StateStorage interface expects void | Promise<void> for setItem, so we don't return the value here.
+  setItem: (name, value) => {
+    currentStorage?.setItem(name, value);
+  },
   removeItem: (name) => currentStorage?.removeItem(name),
 };
 
@@ -70,6 +73,8 @@ export const useCartStore = create<CartState>()(
         set({ items: newItems });
 
         // Sync with API if authenticated
+        // Returning void to match the TypeScript signature `addItem: (product: Product) => void`
+        // without awaiting the promise returned by the async function internally.
         if (currentStorage === localStorage) {
           try {
             await fetch('/api/cart', {
@@ -88,11 +93,15 @@ export const useCartStore = create<CartState>()(
         set({ items: newItems });
 
         if (currentStorage === localStorage) {
-          await fetch('/api/cart', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ items: newItems }),
-          });
+          try {
+            await fetch('/api/cart', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ items: newItems }),
+            });
+          } catch (e) {
+            console.error('Failed to sync removed item with API:', e);
+          }
         }
       },
 
@@ -171,6 +180,8 @@ export const useCartStore = create<CartState>()(
       setAuthenticated: async (isAuth: boolean) => {
         if (typeof window === 'undefined') return;
 
+        // Note: This key matches the zustand persist `name` property below.
+        // It's used to manually clear the storage when logging in/out to prevent data leaks or duplication.
         const key = 'soyol-cart-storage';
 
         if (isAuth) {

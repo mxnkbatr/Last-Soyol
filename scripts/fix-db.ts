@@ -52,6 +52,35 @@ async function fixDb() {
             { weights: { name: 10, brand: 5, description: 3, category: 1 }, name: 'products_text_search' }
         );
 
+        // stockStatus filter
+        await collection.createIndex({ stockStatus: 1 });
+
+        // featured products
+        await collection.createIndex({ featured: 1 });
+
+        // vendor products
+        await collection.createIndex({ vendorId: 1 });
+
+        // price range filter
+        await collection.createIndex({ price: 1 });
+
+        // compound: category + stockStatus (хамгийн их хэрэглэгддэг filter)
+        await collection.createIndex({ category: 1, stockStatus: 1 });
+
+        // orders collection indexes
+        const ordersCollection = db.collection('orders');
+        console.log('Creating orders indexes...');
+        await ordersCollection.createIndex({ userId: 1, createdAt: -1 });
+        await ordersCollection.createIndex({ status: 1, createdAt: -1 });
+        await ordersCollection.createIndex({ phone: 1 });
+        await ordersCollection.createIndex({ 'items.vendorId': 1 });
+
+        // users collection indexes
+        const usersCollection = db.collection('users');
+        console.log('Creating users indexes...');
+        await usersCollection.createIndex({ phone: 1 }, { unique: true });
+        await usersCollection.createIndex({ role: 1 });
+
 
         console.log('Indexes created successfully.');
 

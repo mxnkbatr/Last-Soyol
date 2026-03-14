@@ -22,7 +22,7 @@ export async function auth(): Promise<{ userId: string | null; phone: string | n
         const { payload } = await jwtVerify(token, JWT_SECRET);
 
         // JWT standard uses 'sub' for subject (user id)
-        const userId = payload.sub || payload.userId;
+        const userId = payload.sub;
 
         if (!userId) return { userId: null, phone: null, role: null };
 

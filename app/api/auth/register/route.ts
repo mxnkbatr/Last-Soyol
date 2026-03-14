@@ -3,15 +3,19 @@ import { getCollection } from '@/lib/mongodb';
 import bcrypt from 'bcryptjs';
 import { SignJWT } from 'jose';
 
+const jwtSecretEnv = process.env.JWT_SECRET;
+if (!jwtSecretEnv) throw new Error('JWT_SECRET env variable is not set');
+const JWT_SECRET = new TextEncoder().encode(jwtSecretEnv);
+
 export async function POST(request: Request) {
     try {
         const body = await request.json();
         const { phone, password, name, age } = body;
 
-        console.log('[Register API] Received body:', body);
+
 
         if (!phone || !password || !name || !age) {
-            console.log('[Register API] Missing fields:', { phone: !!phone, password: !!password, name: !!name, age: !!age });
+
             return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
         }
 
@@ -53,9 +57,7 @@ export async function POST(request: Request) {
                 { phone, userId: 'guest' },
                 { $set: { userId: user._id.toString(), updatedAt: new Date() } }
             );
-            if (migrated.modifiedCount > 0) {
-                console.log(`[Register API] Migrated ${migrated.modifiedCount} guest orders for phone ${phone}`);
-            }
+
         } catch (migrationError) {
             console.error('[Register API] Order migration error:', migrationError);
             // Don't fail registration if migration fails
@@ -69,7 +71,7 @@ export async function POST(request: Request) {
         })
             .setProtectedHeader({ alg: 'HS256' })
             .setExpirationTime('24h')
-            .sign(new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret-key-change-me')); // Need secret access here
+            .sign(JWT_SECRET);
 
         const response = NextResponse.json({
             success: true,

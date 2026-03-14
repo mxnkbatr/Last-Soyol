@@ -4,6 +4,7 @@ import { useState } from 'react';
 import useSWR from 'swr';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useSearchParams } from 'next/navigation';
 import {
     Package, PlusCircle, Pencil, Trash2, Loader2, ArrowLeft,
     Search, Filter, Star, AlertCircle
@@ -19,6 +20,7 @@ export default function AdminProductsPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterCategory, setFilterCategory] = useState('all');
     const [togglingFeatured, setTogglingFeatured] = useState<string | null>(null);
+    const [editingStock, setEditingStock] = useState<{ id: string, value: string } | null>(null);
 
     const { data: productsData, mutate: mutateProducts } = useSWR('/api/products', fetcher);
     const { data: categoriesData } = useSWR('/api/categories', fetcher);
@@ -27,10 +29,14 @@ export default function AdminProductsPage() {
     const categories = categoriesData?.categories || [];
     const loading = !productsData;
 
+    const searchParams = useSearchParams();
+    const urlFilter = searchParams.get('filter'); // 'low-stock' | null
+
     const filteredProducts = products.filter((product: any) => {
         const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = filterCategory === 'all' || product.category === filterCategory;
-        return matchesSearch && matchesCategory;
+        const matchesLowStock = urlFilter !== 'low-stock' || (product.inventory || 0) < 5;
+        return matchesSearch && matchesCategory && matchesLowStock;
     });
 
     const handleDelete = async (id: string) => {
@@ -68,6 +74,8 @@ export default function AdminProductsPage() {
                     };
                 }, false);
                 toast.success(newValue ? 'Онцгой болголоо ⭐' : 'Онцгой-оос хаслаа');
+                // Note: нүүр хуудасны carousel дараагийн 60 секундын дараа автоматаар шинэчлэгдэнэ
+                // (Cache-Control: s-maxage=60). Яаралтай шинэчлэх шаардлагагүй.
             } else {
                 toast.error('Алдаа гарлаа');
             }
@@ -75,6 +83,26 @@ export default function AdminProductsPage() {
             toast.error('Сервертэй холбогдож чадсангүй');
         } finally {
             setTogglingFeatured(null);
+        }
+    };
+
+    const handleStockUpdate = async (productId: string, newInventory: number) => {
+        try {
+            const res = await fetch(`/api/products/${productId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ inventory: newInventory })
+            });
+            if (res.ok) {
+                mutateProducts();
+                toast.success('Нөөц шинэчлэгдлээ');
+            } else {
+                toast.error('Алдаа гарлаа');
+            }
+        } catch {
+            toast.error('Сервертэй холбогдож чадсангүй');
+        } finally {
+            setEditingStock(null);
         }
     };
 
@@ -190,11 +218,28 @@ export default function AdminProductsPage() {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-2">
-                                                    <span className={`text-sm font-bold ${(p.inventory || 0) < 5 ? 'text-red-400' : 'text-slate-300'}`}>
-                                                        {p.inventory || 0}
-                                                    </span>
-                                                    {(p.inventory || 0) < 5 && (
-                                                        <AlertCircle className="w-3.5 h-3.5 text-red-500" />
+                                                    {editingStock?.id === p._id ? (
+                                                        <input
+                                                            type="number"
+                                                            value={editingStock!.value}
+                                                            onChange={e => setEditingStock({ id: p._id, value: e.target.value })}
+                                                            onBlur={() => handleStockUpdate(p._id, parseInt(editingStock!.value) || 0)}
+                                                            onKeyDown={e => e.key === 'Enter' && handleStockUpdate(p._id, parseInt(editingStock!.value) || 0)}
+                                                            className="w-16 bg-slate-700 text-white text-sm rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                                            autoFocus
+                                                        />
+                                                    ) : (
+                                                        <>
+                                                            <span
+                                                                onClick={() => setEditingStock({ id: p._id, value: String(p.inventory || 0) })}
+                                                                className={`cursor-pointer hover:text-amber-400 transition-colors text-sm font-bold ${(p.inventory || 0) < 5 ? 'text-red-400' : 'text-slate-300'}`}
+                                                            >
+                                                                {p.inventory || 0}ш
+                                                            </span>
+                                                            {(p.inventory || 0) < 5 && (
+                                                                <AlertCircle className="w-3.5 h-3.5 text-red-500" />
+                                                            )}
+                                                        </>
                                                     )}
                                                 </div>
                                             </td>
@@ -213,7 +258,7 @@ export default function AdminProductsPage() {
                                                 </button>
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="flex items-center justify-end gap-2 transition-all">
                                                     <Link
                                                         href={`/admin/products/${p._id}`}
                                                         className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-all font-medium text-xs flex items-center gap-1"

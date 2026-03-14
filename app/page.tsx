@@ -281,7 +281,7 @@ export default function HomePage() {
             <>
               {/* Desktop Grid - Unified with featured first */}
               <div className="hidden lg:block">
-                <PremiumProductGrid products={sortedProducts} />
+                <PremiumProductGrid products={sortedProducts.filter(p => !p.featured)} />
               </div>
 
               {/* Mobile Grid - Regular products only (featured shown in carousel) */}

@@ -27,6 +27,42 @@ interface Address {
   isDefault: boolean;
 }
 
+const UB_DISTRICTS = [
+  'Баянзүрх',
+  'Баянгол',
+  'Сүхбаатар',
+  'Чингэлтэй',
+  'Хан-Уул',
+  'Сонгинохайрхан',
+  'Налайх',
+  'Багануур',
+  'Багахангай'
+];
+
+const PROVINCES = [
+  'Архангай',
+  'Баян-Өлгий',
+  'Баянхонгор',
+  'Булган',
+  'Говь-Алтай',
+  'Говьсүмбэр',
+  'Дархан-Уул',
+  'Дорнод',
+  'Дорноговь',
+  'Дундговь',
+  'Завхан',
+  'Орхон',
+  'Өвөрхангай',
+  'Өмнөговь',
+  'Сүхбаатар',
+  'Сэлэнгэ',
+  'Төв',
+  'Увс',
+  'Ховд',
+  'Хөвсгөл',
+  'Хэнтий'
+];
+
 const fetcher = async (url: string) => {
   const res = await fetch(url);
   if (!res.ok) throw new Error('Failed to fetch addresses');
@@ -129,7 +165,12 @@ export default function CheckoutPage() {
   const deliveryEstimate = hasPreOrder ? '7-14 хоног' : 'Өнөөдөр - Маргааш';
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === 'city') {
+      setFormData(prev => ({ ...prev, city: value, district: '' }));
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const validateForm = (): boolean => {
@@ -138,7 +179,10 @@ export default function CheckoutPage() {
 
     if (deliveryMethod === 'delivery') {
       if (!formData.address.trim()) { toast.error('Хаягаа оруулна уу'); return false; }
-      if (!formData.district.trim()) { toast.error('Дүүргээ сонгоно уу'); return false; }
+      if (!formData.district.trim()) {
+        toast.error(formData.city === 'Улаанбаатар' ? 'Дүүргээ сонгоно уу' : 'Аймгаа сонгоно уу');
+        return false;
+      }
     }
     return true;
   };
@@ -196,7 +240,7 @@ export default function CheckoutPage() {
       if (paymentMethod === 'qpay') {
         setCreatedOrder({ id: data.orderId, total: grandTotal });
       } else {
-        router.push('/success');
+        router.push(`/success?orderId=${data.orderId}`);
       }
     } catch {
       toast.error('Алдаа гарлаа');
@@ -216,7 +260,7 @@ export default function CheckoutPage() {
           <QPay
             orderId={createdOrder.id}
             amount={createdOrder.total}
-            onSuccess={() => router.push('/success')}
+            onSuccess={() => router.push(`/success?orderId=${createdOrder.id}`)}
           />
         </motion.div>
       </div>
@@ -414,12 +458,13 @@ export default function CheckoutPage() {
                           className="w-full px-4 py-3 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all outline-none font-medium appearance-none text-base"
                         >
                           <option value="Улаанбаатар">Улаанбаатар</option>
-                          <option value="Дархан">Дархан</option>
-                          <option value="Эрдэнэт">Эрдэнэт</option>
+                          <option value="Орон нутаг">Орон нутаг</option>
                         </select>
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-xs uppercase font-bold text-gray-500 ml-1">Дүүрэг/Сум</label>
+                        <label className="text-xs uppercase font-bold text-gray-500 ml-1">
+                          {formData.city === 'Улаанбаатар' ? 'Дүүрэг' : 'Аймаг'}
+                        </label>
                         <select
                           name="district"
                           value={formData.district}
@@ -427,12 +472,11 @@ export default function CheckoutPage() {
                           className="w-full px-4 py-3 rounded-xl bg-gray-50 border-gray-200 focus:bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all outline-none font-medium appearance-none text-base"
                         >
                           <option value="">Сонгох...</option>
-                          <option value="Баянзүрх">Баянзүрх</option>
-                          <option value="Баянгол">Баянгол</option>
-                          <option value="Сүхбаатар">Сүхбаатар</option>
-                          <option value="Чингэлтэй">Чингэлтэй</option>
-                          <option value="Хан-Уул">Хан-Уул</option>
-                          <option value="Сонгинохайрхан">Сонгинохайрхан</option>
+                          {formData.city === 'Улаанбаатар' ? (
+                            UB_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)
+                          ) : (
+                            PROVINCES.map(p => <option key={p} value={p}>{p}</option>)
+                          )}
                         </select>
                       </div>
                     </div>

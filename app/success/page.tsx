@@ -1,13 +1,14 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Package, Phone, Home, Sparkles } from 'lucide-react';
+import { CheckCircle2, Package, Phone, Home, Sparkles, ShoppingBag } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 
-export default function SuccessPage() {
-  const [orderNumber] = useState(() => 
-    `SO-${Date.now().toString().slice(-8)}`
-  );
+function SuccessContent() {
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get('orderId');
 
   useEffect(() => {
     // Confetti animation
@@ -19,7 +20,7 @@ export default function SuccessPage() {
       return Math.random() * (max - min) + min;
     }
 
-    const interval = setInterval(function() {
+    const interval = setInterval(function () {
       const timeLeft = animationEnd - Date.now();
 
       if (timeLeft <= 0) {
@@ -27,7 +28,7 @@ export default function SuccessPage() {
       }
 
       const particleCount = 50 * (timeLeft / duration);
-      
+
       confetti({
         ...defaults,
         particleCount,
@@ -97,15 +98,17 @@ export default function SuccessPage() {
           </motion.div>
 
           {/* Order Number */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="bg-gradient-to-r from-soyol/10 to-yellow-400/10 rounded-2xl p-6 mb-8"
-          >
-            <p className="text-sm text-gray-600 mb-2">Захиалгын дугаар</p>
-            <p className="text-3xl font-black text-soyol">{orderNumber}</p>
-          </motion.div>
+          {orderId && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="bg-gradient-to-r from-soyol/10 to-yellow-400/10 rounded-2xl p-6 mb-8"
+            >
+              <p className="text-sm text-gray-600 mb-2">Захиалгын дугаар</p>
+              <p className="text-3xl font-black text-soyol">#{orderId.slice(-6).toUpperCase()}</p>
+            </motion.div>
+          )}
 
           {/* Info Cards */}
           <div className="grid md:grid-cols-2 gap-4 mb-8">
@@ -162,31 +165,31 @@ export default function SuccessPage() {
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-4">
-            <motion.a
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.9 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              href="/"
-              className="flex-1 py-4 bg-soyol text-white font-bold rounded-2xl shadow-lg glow-orange flex items-center justify-center gap-3"
-            >
-              <Home className="w-5 h-5" />
-              <span>Нүүр хуудас руу буцах</span>
-            </motion.a>
+            {orderId ? (
+              <Link
+                href={`/orders/${orderId}`}
+                className="flex-1 py-4 bg-soyol text-white font-bold rounded-2xl shadow-lg glow-orange flex items-center justify-center gap-3 active:scale-95 transition-all"
+              >
+                <ShoppingBag className="w-5 h-5" />
+                <span>Захиалга харах</span>
+              </Link>
+            ) : (
+              <Link
+                href="/"
+                className="flex-1 py-4 bg-soyol text-white font-bold rounded-2xl shadow-lg glow-orange flex items-center justify-center gap-3 active:scale-95 transition-all"
+              >
+                <Home className="w-5 h-5" />
+                <span>Нүүр хуудас</span>
+              </Link>
+            )}
 
-            <motion.a
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <Link
               href="tel:77181818"
-              className="flex-1 py-4 bg-white border-2 border-soyol text-soyol font-bold rounded-2xl shadow-lg flex items-center justify-center gap-3 hover:bg-soyol hover:text-white transition"
+              className="flex-1 py-4 bg-white border-2 border-soyol text-soyol font-bold rounded-2xl shadow-lg flex items-center justify-center gap-3 hover:bg-soyol hover:text-white transition active:scale-95"
             >
               <Phone className="w-5 h-5" />
               <span>Холбогдох</span>
-            </motion.a>
+            </Link>
           </div>
 
           {/* Footer Note */}
@@ -230,5 +233,13 @@ export default function SuccessPage() {
         </motion.div>
       </div>
     </div>
+  );
+}
+
+export default function SuccessPage() {
+  return (
+    <Suspense>
+      <SuccessContent />
+    </Suspense>
   );
 }

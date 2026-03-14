@@ -211,11 +211,15 @@ export default function MobileFeaturedCarousel({ products }: MobileFeaturedCarou
                                     />
 
                                     {/* Stock Badge - Left */}
-                                    {product.inventory !== undefined && product.inventory < 10 && (
-                                        <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider backdrop-blur-md shadow-md bg-red-500/90 text-white shadow-red-500/30">
-                                            {product.inventory} {t('product', 'pieces')}
+                                    <div className={`absolute top-3 left-3 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest backdrop-blur-md shadow-md border ${product.stockStatus === 'pre-order'
+                                        ? 'bg-amber-500/90 text-white border-amber-400/50 shadow-amber-500/10'
+                                        : 'bg-emerald-500/90 text-white border-emerald-400/50 shadow-emerald-500/10'
+                                        }`}>
+                                        <div className="flex items-center gap-1">
+                                            <div className={`w-1 h-1 rounded-full bg-white ${product.stockStatus === 'in-stock' ? 'animate-pulse' : ''}`} />
+                                            {product.stockStatus === 'pre-order' ? 'Захиалга' : 'Бэлэн'}
                                         </div>
-                                    )}
+                                    </div>
                                 </div>
                             </Link>
 

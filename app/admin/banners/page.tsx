@@ -28,7 +28,7 @@ export default function BannerAdminPage() {
 
     const fetchBanners = async () => {
         try {
-            const res = await fetch('/api/banners');
+            const res = await fetch('/api/banners?all=true');
             const data = await res.json();
             // On admin we want all banners, not just active ones. 
             // Need a separate admin API or query param?

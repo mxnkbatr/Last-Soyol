@@ -4,7 +4,8 @@ import { jwtVerify } from 'jose';
 import { getCollection } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret-key-change-me');
+if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET env variable is not set');
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
 async function getUser(req: Request) {
     const cookieStore = await cookies();
@@ -14,8 +15,9 @@ async function getUser(req: Request) {
 
     try {
         const { payload } = await jwtVerify(token, JWT_SECRET);
-        if (!payload.userId) return null;
-        return payload.userId as string;
+        const userId = (payload.sub || payload.userId) as string | undefined;
+        if (!userId) return null;
+        return userId;
     } catch {
         return null;
     }
@@ -24,7 +26,7 @@ async function getUser(req: Request) {
 export async function PUT(req: Request, { params }: { params: any }) {
     const userId = await getUser(req);
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    
+
     const { id } = await params;
     const data = await req.json();
 
@@ -63,14 +65,14 @@ export async function PUT(req: Request, { params }: { params: any }) {
     if (result.matchedCount === 0) {
         return NextResponse.json({ error: 'Address not found' }, { status: 404 });
     }
-    
+
     return NextResponse.json({ success: true });
 }
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
     const userId = await getUser(req);
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    
+
     const { id } = await params;
     const usersCollection = await getCollection('users');
 

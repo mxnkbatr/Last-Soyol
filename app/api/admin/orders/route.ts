@@ -41,6 +41,13 @@ export async function PUT(request: Request) {
 
         const { orderId, status, deliveryEstimate } = await request.json();
 
+        if (status) {
+            const allowedStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
+            if (!allowedStatuses.includes(status)) {
+                return NextResponse.json({ error: 'Буруу статус' }, { status: 400 });
+            }
+        }
+
         if (!orderId) {
             return NextResponse.json({ error: 'Order ID required' }, { status: 400 });
         }

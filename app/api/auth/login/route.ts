@@ -3,7 +3,8 @@ import { getCollection } from '@/lib/mongodb';
 import bcrypt from 'bcryptjs';
 import { SignJWT } from 'jose';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret-key-change-me');
+if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET env variable is not set');
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
 export async function POST(request: Request) {
     try {
@@ -17,14 +18,14 @@ export async function POST(request: Request) {
         const user = await users.findOne({ phone });
 
         if (!user || !user.password) {
-            console.log('[Login API] User not found or no password:', { found: !!user, hasPassword: !!user?.password });
+
             return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
         }
 
         // Verify password
         const isValid = await bcrypt.compare(password, user.password);
         if (!isValid) {
-            console.log('[Login API] Password mismatch for user:', phone);
+
             return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
         }
 

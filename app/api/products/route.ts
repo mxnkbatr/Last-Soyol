@@ -21,25 +21,39 @@ export async function GET(request: NextRequest) {
       filter.category = category;
     }
 
+    const conditions: object[] = [];
+
     if (stockStatus) {
       if (stockStatus === 'in-stock') {
-        // Match either explicit 'in-stock' or missing field
-        filter.$or = [
-          { stockStatus: 'in-stock' },
-          { stockStatus: { $exists: false } },
-          { stockStatus: null }
-        ];
+        conditions.push({
+          $or: [
+            { stockStatus: 'in-stock' },
+            { stockStatus: { $exists: false } },
+            { stockStatus: null }
+          ]
+        });
       } else {
         filter.stockStatus = stockStatus;
       }
     }
 
+    const featured = searchParams.get('featured');
+    if (featured === 'true') {
+      filter.featured = true;
+    }
+
     if (q) {
-      filter.$or = [
-        { name: { $regex: q, $options: 'i' } },
-        { description: { $regex: q, $options: 'i' } },
-        { brand: { $regex: q, $options: 'i' } },
-      ];
+      conditions.push({
+        $or: [
+          { name: { $regex: q, $options: 'i' } },
+          { description: { $regex: q, $options: 'i' } },
+          { brand: { $regex: q, $options: 'i' } },
+        ]
+      });
+    }
+
+    if (conditions.length > 0) {
+      filter.$and = conditions;
     }
 
     if (minPrice || maxPrice) {

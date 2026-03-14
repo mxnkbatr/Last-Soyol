@@ -1,4 +1,5 @@
 import useSWRInfinite from 'swr/infinite';
+import { useEffect } from 'react';
 import { Product } from '@/models/Product';
 
 interface ProductsResponse {
@@ -42,11 +43,16 @@ export function useProducts(filters: Record<string, any> = {}) {
     }
   );
 
+  const filtersKey = JSON.stringify(filters);
+
+  // Reset to page 1 when filters change to avoid showing stale data from previous filters
+  useEffect(() => {
+    setSize(1);
+  }, [filtersKey, setSize]);
+
   const products = data ? data.flatMap(page => page.products) : [];
   const isLoadingInitialData = !data && !error;
-  const isLoadingMore =
-    isLoadingInitialData ||
-    (size > 0 && data && typeof data[size - 1] === 'undefined');
+  const isLoadingMore = size > 1 && typeof data?.[size - 1] === 'undefined';
   const isEmpty = data?.[0]?.products.length === 0;
   const isReachingEnd =
     isEmpty || (data && !data[data.length - 1]?.hasMore);

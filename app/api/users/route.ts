@@ -5,14 +5,17 @@ import { auth, currentUser } from '@/lib/auth';
 export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
-        const role = searchParams.get('role');
+        const requestedRole = searchParams.get('role');
 
-        // Only allow unauthenticated access for role=admin
-        if (role !== 'admin') {
-            const { userId } = await auth();
-            if (!userId) {
-                return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-            }
+        // Always enforce authentication
+        const { userId, role: userRole } = await auth();
+        if (!userId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        // Admin хэрэглэгчдийн жагсаалтыг зөвхөн admin харж болно
+        if (requestedRole === 'admin' && userRole !== 'admin') {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
         const usersCollection = await getCollection('users');
@@ -20,7 +23,7 @@ export async function GET(req: Request) {
         const { userId: adminId } = await auth();
 
         let query = {};
-        if (role === 'admin') {
+        if (requestedRole === 'admin') {
             query = { role: 'admin' };
         }
 

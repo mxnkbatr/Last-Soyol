@@ -221,14 +221,15 @@ export default function SpecialProductsCarousel({ products }: SpecialProductsCar
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
                                     {/* Stock Badge - Large & Prominent */}
-                                    {product.stockStatus === 'in-stock' && product.inventory !== undefined && (
-                                        <div className={`absolute top-4 left-4 px-3 py-1.5 rounded-xl text-xs font-extrabold uppercase tracking-wider backdrop-blur-md shadow-lg ${product.inventory < 10
-                                            ? 'bg-red-500/90 text-white shadow-red-500/30'
-                                            : 'bg-white/90 text-slate-700 shadow-black/5'
-                                            }`}>
-                                            {product.inventory < 10 ? `${product.inventory} ширхэг` : '10+ ширхэг'}
+                                    <div className={`absolute top-4 left-4 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest backdrop-blur-md shadow-lg border ${product.stockStatus === 'pre-order'
+                                        ? 'bg-amber-500/90 text-white border-amber-400/50 shadow-amber-500/20'
+                                        : 'bg-emerald-500/90 text-white border-emerald-400/50 shadow-emerald-500/20'
+                                        }`}>
+                                        <div className="flex items-center gap-1.5">
+                                            <div className={`w-1.5 h-1.5 rounded-full bg-white ${product.stockStatus === 'in-stock' ? 'animate-pulse' : ''}`} />
+                                            {product.stockStatus === 'pre-order' ? 'Захиалга' : 'Бэлэн'}
                                         </div>
-                                    )}
+                                    </div>
 
                                     <ProductBadge
                                         isFeatured={product.featured || product.sections?.includes('Онцгой') || product.sections?.includes('Онцлох')}

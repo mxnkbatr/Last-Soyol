@@ -8,6 +8,19 @@ import { sendOrderConfirmation } from '@/lib/email';
 
 export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url);
+    const phoneParam = searchParams.get('phone');
+
+    // Guest phone-based tracking — no auth required
+    if (phoneParam) {
+      const orders = await getCollection('orders');
+      const results = await orders
+        .find({ phone: phoneParam })
+        .sort({ createdAt: -1 })
+        .toArray();
+      return NextResponse.json({ orders: results });
+    }
+
     const { userId, phone } = await auth();
 
     if (!userId) {
@@ -54,11 +67,31 @@ export async function POST(req: NextRequest) {
     const hasPreOrder = body.items?.some((item: any) => item.stockStatus === 'pre-order') || false;
     const deliveryEstimate = hasPreOrder ? '7-14 хоног' : 'Өнөөдөр - Маргааш';
 
+    // items-аас server-т нийт үнийг тооцоолох
+    const productsCollection = await getCollection('products');
+    let serverTotal = 0;
+
+    if (body.items && body.items.length > 0) {
+      const { ObjectId } = await import('mongodb');
+      for (const item of body.items) {
+        const productId = item.productId || item.id;
+        if (!productId) continue;
+        try {
+          const product = await productsCollection.findOne({ _id: new ObjectId(productId) });
+          if (product) {
+            serverTotal += product.price * (item.quantity || 1);
+          }
+        } catch { continue; }
+      }
+    }
+
+    const totalToSave = serverTotal > 0 ? serverTotal : (body.total || 0);
+
     const result = await orders.insertOne({
       userId,
       phone, // Store phone at top level for easy querying
       items: body.items || [],
-      total: body.total || 0,
+      total: totalToSave,
       status: body.status || 'pending',
       deliveryMethod: body.deliveryMethod || 'delivery',
       paymentMethod: body.paymentMethod || 'cash',
@@ -81,7 +114,7 @@ export async function POST(req: NextRequest) {
         const notifications = admins.map(admin => ({
           userId: admin._id.toString(),
           title: '🛒 Шинэ захиалга ирлээ!',
-          message: `${body.shipping?.fullName || 'Хэрэглэгч'} - ${body.total}₮`,
+          message: `${body.shipping?.fullName || 'Хэрэглэгч'} - ${totalToSave}₮`,
           type: 'order',
           isRead: false,
           link: '/admin/orders',
@@ -96,6 +129,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Decrement inventory for each purchased item
+    // Note: We don't perform a pre-check of inventory here (even for guests)
+    // because the checkout/route.ts endpoint handles strict inventory validation
+    // using a transaction before this order creation endpoint is hit.
     for (const item of (body.items || [])) {
       const productId = item.productId || item.id;
       if (!productId) continue;
@@ -113,11 +149,14 @@ export async function POST(req: NextRequest) {
         { $inc: { inventory: -(item.quantity || 1) } }
       );
 
-      // Check if inventory hit 0 or below — if so, delete the product
+      // Check if inventory hit 0 or below — if so, mark as out-of-stock
       const updatedProduct = await products.findOne({ _id: objectId });
       if (updatedProduct && (updatedProduct.inventory ?? 0) <= 0) {
-        await products.deleteOne({ _id: objectId });
-        console.log(`[Orders API] Product ${productId} deleted — inventory reached 0`);
+        await products.updateOne(
+          { _id: objectId },
+          { $set: { stockStatus: 'out-of-stock', inventory: 0 } }
+        );
+        console.log(`[Orders API] Product ${productId} marked out-of-stock — inventory reached 0`);
       }
     }
 
@@ -174,14 +213,14 @@ export async function POST(req: NextRequest) {
           await sendOrderConfirmation({
             id: currentOrderId,
             items: body.items || [],
-            totalPrice: body.total || 0,
+            totalPrice: totalToSave,
             fullName: body.shipping?.fullName || 'Хэрэглэгч',
             address: body.shipping?.address || '',
             city: body.shipping?.city || ''
           }, recipientEmail);
         }
       } catch (e) { console.error('Email confirmation error:', e); }
-    })();
+    })().catch(e => console.error('Email IIFE error:', e));
 
     return NextResponse.json({ orderId: currentOrderId }, { status: 201 });
   } catch (error) {

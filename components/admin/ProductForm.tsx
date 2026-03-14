@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Save, ArrowLeft, Image as ImageIcon, Box, FileText, CheckCircle2, Star, List, Plus, Trash2 } from 'lucide-react';
-import MultiImageUpload from '@/components/admin/MultiImageUpload';
+import { Loader2, Save, ArrowLeft, Image as ImageIcon, Box, FileText, CheckCircle2, Star, List, Plus, Trash2, Upload } from 'lucide-react';
+import { CldUploadWidget } from 'next-cloudinary';
 import useSWR from 'swr';
 import toast from 'react-hot-toast';
 
@@ -37,7 +37,8 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting }: Pro
         originalPrice: initialData?.originalPrice?.toString() || '',
         discountPercent: initialData?.discountPercent?.toString() || '',
         sections: initialData?.sections || [],
-        images: initialData?.images || (initialData?.image ? [initialData.image] : []),
+        image: initialData?.image || '',
+        images: initialData?.images || [],
         category: initialData?.category || '',
         stockStatus: initialData?.stockStatus || 'in-stock',
         inventory: initialData?.inventory?.toString() || '0',
@@ -109,7 +110,6 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting }: Pro
         const submitData = {
             ...formData,
             attributes: attributesObj,
-            image: formData.images.length > 0 ? formData.images[0] : '',
         };
 
         await onSubmit(submitData);
@@ -218,19 +218,101 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting }: Pro
 
                     {/* Media Tab */}
                     {activeTab === 'media' && (
-                        <div className="space-y-5 animate-in fade-in duration-300">
+                        <div className="space-y-8 animate-in fade-in duration-300">
+                            {/* Main Image */}
                             <div>
-                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Үндсэн Зураг</label>
-                                <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 border-dashed hover:border-amber-500/30 transition-colors">
-                                    <MultiImageUpload
-                                        value={formData.images}
-                                        onChange={(urls) => handleChange('images', urls)}
-                                    />
+                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Үндсэн Зураг <span className="text-red-500">*</span></label>
+                                <div className="space-y-4">
+                                    {formData.image && (
+                                        <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-slate-800 bg-slate-950">
+                                            <img src={formData.image} alt="Main" className="w-full h-full object-contain" />
+                                            <button
+                                                type="button"
+                                                onClick={() => setFormData(prev => ({ ...prev, image: '' }))}
+                                                className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-lg"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {!formData.image && (
+                                        <CldUploadWidget
+                                            uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "ml_default"}
+                                            onSuccess={(result: any) => {
+                                                const url = result?.info?.secure_url;
+                                                if (url) {
+                                                    setFormData(prev => ({ ...prev, image: url }));
+                                                }
+                                            }}
+                                        >
+                                            {({ open }) => (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => open()}
+                                                    className="w-full py-12 bg-slate-950 border-2 border-dashed border-slate-800 rounded-2xl flex flex-col items-center justify-center gap-3 text-slate-500 hover:text-amber-500 hover:border-amber-500/50 hover:bg-amber-500/5 transition-all group"
+                                                >
+                                                    <div className="p-4 bg-slate-900 rounded-full group-hover:bg-amber-500/10 transition-colors">
+                                                        <ImageIcon className="w-8 h-8" />
+                                                    </div>
+                                                    <span className="font-bold">Зураг сонгох</span>
+                                                    <span className="text-[10px] uppercase tracking-widest opacity-60">Үндсэн зураг заавал байх шаардлагатай</span>
+                                                </button>
+                                            )}
+                                        </CldUploadWidget>
+                                    )}
                                 </div>
-                                <p className="text-xs text-slate-500 mt-2 flex flex-col items-center">
-                                    <span>Санал болгож буй хэмжээ: 800x800px. Зөвшөөрөгдсөн: JPG, PNG, WEBP.</span>
-                                    <span>(Эхний зураг үндсэн зураг болох бөгөөд одоор тэмдэглэгдэнэ)</span>
-                                </p>
+                            </div>
+
+                            {/* Additional Images */}
+                            <div className="pt-8 border-t border-slate-800">
+                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">
+                                    Нэмэлт зургууд (хүртэл 8)
+                                </label>
+
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+                                    {(formData.images || []).map((img: string, i: number) => (
+                                        <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-slate-800 bg-slate-950 group">
+                                            <img src={img} alt="" className="w-full h-full object-cover" />
+                                            <button
+                                                type="button"
+                                                onClick={() => setFormData(prev => ({
+                                                    ...prev,
+                                                    images: (prev.images || []).filter((_: string, idx: number) => idx !== i)
+                                                }))}
+                                                className="absolute top-1 right-1 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all text-xs"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {(formData.images || []).length < 8 && (
+                                    <CldUploadWidget
+                                        uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "ml_default"}
+                                        onSuccess={(result: any) => {
+                                            const url = result?.info?.secure_url;
+                                            if (url) {
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    images: [...(prev.images || []), url]
+                                                }));
+                                            }
+                                        }}
+                                    >
+                                        {({ open }) => (
+                                            <button
+                                                type="button"
+                                                onClick={() => open()}
+                                                className="w-full flex items-center justify-center gap-2 py-4 bg-slate-950 border border-slate-800 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 transition-all text-sm font-bold border-dashed"
+                                            >
+                                                <Plus className="w-4 h-4" />
+                                                Зураг нэмэх
+                                            </button>
+                                        )}
+                                    </CldUploadWidget>
+                                )}
                             </div>
                         </div>
                     )}

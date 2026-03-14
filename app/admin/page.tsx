@@ -36,7 +36,7 @@ export default function AdminDashboardPage() {
 
   const revenue = orders
     .filter((o: any) => o.status === 'delivered')
-    .reduce((sum: number, o: any) => sum + (o.totalPrice || 0), 0);
+    .reduce((sum: number, o: any) => sum + (o.total || o.totalPrice || 0), 0);
 
   const inventoryLow = products.filter((p: any) => (p.inventory || 0) < 5);
 
@@ -121,7 +121,7 @@ export default function AdminDashboardPage() {
                     <tr key={order._id} className="hover:bg-slate-800/50 transition-colors border-b border-slate-800/50 last:border-0">
                       <td className="p-4 text-sm font-medium text-white">{order._id.substring(0, 8).toUpperCase()}</td>
                       <td className="p-4 text-sm text-slate-400">{new Date(order.createdAt).toLocaleDateString()}</td>
-                      <td className="p-4 text-sm font-bold text-amber-400">{formatPrice(order.totalPrice)}</td>
+                      <td className="p-4 text-sm font-bold text-amber-400">{formatPrice(order.total || order.totalPrice || 0)}</td>
                       <td className="p-4">
                         {order.status === 'pending' && <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/20">Хүлээгдэж байна</span>}
                         {order.status === 'confirmed' && <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/20">Баталгаажсан</span>}

@@ -2,321 +2,120 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Package, CheckCircle, ArrowLeft, Phone } from 'lucide-react';
+import { Search, Package, Clock, Truck, CheckCircle2, XCircle, Phone, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
+import { formatPrice } from '@/lib/utils';
 
-// Sample Orders Data (Hardcoded for phone: 99112233)
-const sampleOrders = {
-  '99112233': [
-    {
-      id: 'ORD-2024-001',
-      date: '2024-02-01',
-      items: [
-        {
-          id: '1',
-          name: 'Apple Watch Series 9 - Titanium',
-          image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&h=800&fit=crop',
-          price: 1299000,
-          quantity: 1,
-          status: 'Баталгаажсан',
-        },
-        {
-          id: '2',
-          name: 'Sony WH-1000XM5 Wireless Headphones',
-          image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&h=800&fit=crop',
-          price: 449000,
-          quantity: 1,
-          status: 'Баталгаажсан',
-        },
-      ],
-      totalAmount: 1748000,
-    },
-    {
-      id: 'ORD-2024-002',
-      date: '2024-01-28',
-      items: [
-        {
-          id: '3',
-          name: 'Nike Air Max 270 - White/Black',
-          image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&h=800&fit=crop',
-          price: 189000,
-          quantity: 2,
-          status: 'Баталгаажсан',
-        },
-      ],
-      totalAmount: 378000,
-    },
-  ],
-};
-
-const formatPrice = (price: number) => {
-  return new Intl.NumberFormat('mn-MN', {
-    style: 'currency',
-    currency: 'MNT',
-    minimumFractionDigits: 0,
-  }).format(price);
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
+  pending: { label: 'Хүлээгдэж буй', color: 'text-orange-600', bg: 'bg-orange-50', icon: Clock },
+  confirmed: { label: 'Баталгаажсан', color: 'text-blue-600', bg: 'bg-blue-50', icon: Package },
+  shipped: { label: 'Хүргэлтэнд', color: 'text-purple-600', bg: 'bg-purple-50', icon: Truck },
+  delivered: { label: 'Хүргэгдсэн', color: 'text-green-600', bg: 'bg-green-50', icon: CheckCircle2 },
+  cancelled: { label: 'Цуцлагдсан', color: 'text-red-600', bg: 'bg-red-50', icon: XCircle },
 };
 
 export default function TrackOrderPage() {
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [searchedPhone, setSearchedPhone] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [orders, setOrders] = useState<any[]>([]);
+  const [searched, setSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSearch = () => {
-    if (!phoneNumber.trim()) return;
-
-    setIsSearching(true);
-    // Simulate API call
-    setTimeout(() => {
-      setSearchedPhone(phoneNumber);
-      setIsSearching(false);
-    }, 800);
+  const handleSearch = async () => {
+    const p = phone.trim();
+    if (p.length < 8) { setError('Утасны дугаар буруу байна'); return; }
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/orders?phone=${encodeURIComponent(p)}`);
+      const data = await res.json();
+      setOrders(data.orders || []);
+      setSearched(true);
+    } catch {
+      setError('Сервертэй холбогдож чадсангүй');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const orders = searchedPhone ? (sampleOrders as any)[searchedPhone] || [] : [];
-
   return (
-    <div className="min-h-screen bg-gray-50 pt-32 pb-20">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-soyol/10 rounded-full mb-6">
-            <Package className="w-10 h-10 text-soyol" />
-          </div>
-          <h1 className="text-4xl font-black text-gray-900 mb-3">
-            Захиалга хянах
-          </h1>
-          <p className="text-lg text-gray-600">
-            Утасны дугаараа оруулаад захиалгаа шалгаарай
-          </p>
-        </motion.div>
+    <div className="min-h-screen bg-[#F8FAFC] pb-24 pt-4">
+      <div className="max-w-xl mx-auto px-4">
 
-        {/* Search Box */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white rounded-3xl shadow-lg border border-gray-100 p-8 mb-12"
-        >
-          <label className="block text-sm font-bold text-gray-700 mb-3">
-            Утасны дугаар
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-8 pt-4">
+          <Link href="/" className="p-2 bg-white rounded-2xl border border-slate-100 shadow-sm">
+            <ArrowLeft className="w-5 h-5 text-slate-600" />
+          </Link>
+          <h1 className="text-2xl font-black text-slate-900">Захиалга хянах</h1>
+        </div>
+
+        {/* Search */}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5 mb-6">
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
+            Бүртгэлтэй утасны дугаар
           </label>
-          <div className="flex gap-3">
-            <div className="flex-1 relative">
-              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="tel"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                placeholder="Жишээ: 99112233"
-                className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:border-soyol focus:ring-4 focus:ring-soyol/10 outline-none transition-all text-lg font-medium"
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                placeholder="99112233"
+                className="w-full pl-10 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none focus:border-[#FF5000] focus:ring-2 focus:ring-[#FF5000]/10 transition-all"
               />
             </div>
             <motion.button
               onClick={handleSearch}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              disabled={isSearching || !phoneNumber.trim()}
-              className="px-8 py-4 bg-soyol text-white font-bold rounded-2xl hover:bg-soyol-dark transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              whileTap={{ scale: 0.97 }}
+              disabled={loading}
+              className="px-5 py-3.5 bg-[#FF5000] text-white font-bold rounded-2xl shadow-lg shadow-orange-500/25 disabled:opacity-60 flex items-center gap-2 text-sm"
             >
-              {isSearching ? (
-                <>
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                    className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
-                  />
-                  <span>Хайж байна...</span>
-                </>
-              ) : (
-                <>
-                  <Search className="w-5 h-5" />
-                  <span>Хянах</span>
-                </>
-              )}
+              {loading ? <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" /> : <Search className="w-4 h-4" />}
+              Хайх
             </motion.button>
           </div>
-          <p className="text-xs text-gray-500 mt-3">
-            💡 Демо: <span className="font-mono bg-gray-100 px-2 py-1 rounded">99112233</span> дугаараар туршиж үзнэ үү
-          </p>
-        </motion.div>
+          {error && <p className="text-xs text-red-500 font-medium mt-2">{error}</p>}
+        </div>
 
         {/* Results */}
         <AnimatePresence mode="wait">
-          {searchedPhone && (
-            <>
-              {orders.length > 0 ? (
-                <motion.div
-                  key="orders-found"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="space-y-6"
-                >
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-black text-gray-900">
-                      Таны захиалгууд ({orders.length})
-                    </h2>
-                    <motion.button
-                      onClick={() => setSearchedPhone('')}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="text-sm font-bold text-gray-600 hover:text-soyol transition-colors"
-                    >
-                      Шинэ хайлт хийх
-                    </motion.button>
-                  </div>
-
-                  {orders.map((order: any, orderIndex: number) => (
-                    <motion.div
-                      key={order.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: orderIndex * 0.1 }}
-                      className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden"
-                    >
-                      {/* Order Header */}
-                      <div className="bg-gradient-to-r from-soyol/10 to-transparent px-8 py-6 border-b border-gray-100">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm text-gray-600 mb-1">Захиалгын дугаар</p>
-                            <p className="text-xl font-black text-gray-900">{order.id}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-sm text-gray-600 mb-1">Огноо</p>
-                            <p className="text-lg font-bold text-gray-900">{order.date}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Order Items */}
-                      <div className="p-8 space-y-6">
-                        {order.items.map((item: any, itemIndex: number) => (
-                          <motion.div
-                            key={item.id}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: (orderIndex * 0.1) + (itemIndex * 0.05) }}
-                            className="flex items-center gap-6 pb-6 border-b border-gray-100 last:border-0 last:pb-0"
-                          >
-                            {/* Product Image */}
-                            <div className="relative w-24 h-24 bg-gray-100 rounded-2xl overflow-hidden flex-shrink-0">
-                              <Image
-                                src={item.image || '/placeholder.png'}
-                                alt={item.name}
-                                fill
-                                className="object-cover"
-                                sizes="96px"
-                              />
-                            </div>
-
-                            {/* Product Info */}
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-lg font-bold text-gray-900 mb-2 truncate">
-                                {item.name}
-                              </h3>
-                              <div className="flex items-center gap-4">
-                                <p className="text-sm text-gray-600">
-                                  Тоо ширхэг: <span className="font-bold text-gray-900">{item.quantity}</span>
-                                </p>
-                                <p className="text-2xl font-black text-soyol">
-                                  {formatPrice(item.price)}
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* Status Badge */}
-                            <div className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-xl border border-green-200">
-                              <CheckCircle className="w-5 h-5" />
-                              <span className="text-sm font-bold whitespace-nowrap">
-                                {item.status}
-                              </span>
-                            </div>
-                          </motion.div>
-                        ))}
-
-                        {/* Order Total */}
-                        <div className="pt-6 border-t-2 border-gray-200">
-                          <div className="flex items-center justify-between">
-                            <p className="text-lg font-bold text-gray-700">
-                              Нийт дүн:
-                            </p>
-                            <p className="text-3xl font-black text-soyol">
-                              {formatPrice(order.totalAmount)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </motion.div>
+          {searched && (
+            <motion.div key="results" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              {orders.length === 0 ? (
+                <div className="bg-white rounded-3xl border border-slate-100 p-10 text-center">
+                  <Package className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+                  <p className="font-bold text-slate-900 mb-1">Захиалга олдсонгүй</p>
+                  <p className="text-sm text-slate-400">Утасны дугаараа дахин шалгана уу</p>
+                </div>
               ) : (
-                <motion.div
-                  key="no-orders"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  className="bg-white rounded-3xl shadow-lg border border-gray-100 p-12 text-center"
-                >
-                  <div className="inline-flex items-center justify-center w-24 h-24 bg-gray-100 rounded-full mb-6">
-                    <Package className="w-12 h-12 text-gray-400" />
-                  </div>
-                  <h3 className="text-2xl font-black text-gray-900 mb-3">
-                    Захиалга олдсонгүй
-                  </h3>
-                  <p className="text-gray-600 mb-8">
-                    Танд одоогоор захиалга байхгүй байна.<br />
-                    <span className="text-sm text-gray-500">Утасны дугаараа дахин шалгана уу.</span>
-                  </p>
-                  <div className="flex items-center justify-center gap-4">
-                    <motion.button
-                      onClick={() => setSearchedPhone('')}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="px-6 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
-                    >
-                      Дахин хайх
-                    </motion.button>
-                    <Link href="/">
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="px-6 py-3 bg-soyol text-white font-bold rounded-xl hover:bg-soyol-dark transition-colors flex items-center gap-2"
-                      >
-                        <ArrowLeft className="w-5 h-5" />
-                        Дэлгүүр рүү буцах
-                      </motion.button>
-                    </Link>
-                  </div>
-                </motion.div>
+                <div className="space-y-4">
+                  <p className="text-sm font-bold text-slate-500 px-1">{orders.length} захиалга олдлоо</p>
+                  {orders.map((order: any) => {
+                    const cfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
+                    const Icon = cfg.icon;
+                    return (
+                      <Link href={`/orders/${order._id}`} key={order._id}>
+                        <motion.div whileTap={{ scale: 0.98 }} className="bg-white rounded-3xl border border-slate-100 p-4 shadow-sm">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="font-black text-slate-900 text-sm">#{order._id.slice(-6).toUpperCase()}</span>
+                            <span className={`flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full ${cfg.bg} ${cfg.color}`}>
+                              <Icon className="w-3 h-3" />{cfg.label}
+                            </span>
+                          </div>
+                          <p className="text-lg font-black text-[#FF5000]">{formatPrice(order.total || order.totalPrice || 0)}</p>
+                          <p className="text-xs text-slate-400 mt-1">{new Date(order.createdAt).toLocaleDateString('mn-MN')}</p>
+                        </motion.div>
+                      </Link>
+                    );
+                  })}
+                </div>
               )}
-            </>
+            </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Help Text */}
-        {!searchedPhone && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="text-center mt-12"
-          >
-            <p className="text-sm text-gray-500">
-              Асуудал гарвал{' '}
-              <a href="tel:77181818" className="text-soyol font-bold hover:underline">
-                77 18 18 18
-              </a>{' '}
-              дугаар руу залгана уу
-            </p>
-          </motion.div>
-        )}
       </div>
     </div>
   );
